@@ -1,0 +1,52 @@
+#include "resource.h"
+
+LANGUAGE LANG_RUSSIAN, SUBLANG_RUSSIAN_RUSSIA
+
+//
+// String resources
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_NAME         APP_NAME
+END
+
+//
+// Icon resources
+//
+IDI_MAIN           ICON				"res\\main.ico"
+
+//
+// Bitmap resources
+//
+IDB_GLYPHS			BITMAP	DISCARDABLE     "res\\matrix.bmp"
+
+//
+// Version Information resources
+//
+1 VERSIONINFO
+    FILEVERSION     APP_VERSION_FULL
+    PRODUCTVERSION  APP_VERSION_FULL
+    FILEOS          VOS__WINDOWS32
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
+    FILEFLAGSMASK   0x00000000
+    FILEFLAGS       0x00000000
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "04190025"
+        {
+            VALUE "Comments", APP_WEBSITE
+            VALUE "FileVersion", APP_VERSION
+            VALUE "LegalCopyright", "Copyright © 2011 Henry++"
+            VALUE "OriginalFilename", APP_NAME_SHORT ".scr"
+            VALUE "ProductName", APP_NAME
+            VALUE "ProductVersion", APP_VERSION
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0419, 0x0025
+    }
+}
