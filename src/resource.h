@@ -1,20 +1,19 @@
 #ifndef __RESOURCE_H__
 #define __RESOURCE_H__
 
-#include "matrix.h"
+#include "main.h"
 
 #ifndef IDC_STATIC
 #define IDC_STATIC (-1)
 #endif
 
-// Icons
-#define IDI_MAIN                                100
-
-// Strings
-#define IDS_NAME	                            1
-
 // Bitmaps
-#define IDB_GLYPHS								100
+#define IDB_GLYPH	1
 
-#endif
+// Cursors
+#define IDC_CURSOR	1
 
+// Icons
+#define IDI_MAIN	1
+
+#endif // __RESOURCE_H__
