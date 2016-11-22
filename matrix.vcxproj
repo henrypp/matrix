@@ -125,12 +125,13 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_UAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -164,12 +165,13 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_UAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -208,11 +210,12 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_UAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -251,10 +254,11 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_UAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -278,9 +282,16 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\routine\rapp.cpp" />
+    <ClCompile Include="..\routine\routine.cpp" />
+    <ClCompile Include="..\routine\rstring.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\routine\rapp.h" />
+    <ClInclude Include="..\routine\rconfig.h" />
+    <ClInclude Include="..\routine\routine.h" />
+    <ClInclude Include="..\routine\rstring.h" />
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\resource.h" />
   </ItemGroup>

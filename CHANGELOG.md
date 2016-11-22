@@ -1,3 +1,9 @@
+v1.3 (22 November 2016)
++ added config (see matrix.ini)
++ added installation scripts
++ added some optimization
++ added stability improvements (treat warnings as errors)
+
 v1.2 (21 January 2016)
 + added preview
 - fixed bug in windows 10 (x64 build)
