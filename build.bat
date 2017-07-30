@@ -1,4 +1,4 @@
 @echo off
 
 cd ..\builder
-build "Matrix Screensaver" matrix 1.3
+build "" matrix 1.3
