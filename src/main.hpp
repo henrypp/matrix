@@ -30,7 +30,10 @@ typedef unsigned int GLYPH;
 #define SPEED_MAX 10
 #define SPEED_DEFAULT 8
 
-#define HUE 100
+#define HUE_MIN 1
+#define HUE_MAX 255
+#define HUE_DEFAULT 100
+
 #define HUE_RANDOM false
 
 // constants inferred from matrix.bmp
