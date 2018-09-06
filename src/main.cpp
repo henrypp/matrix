@@ -571,10 +571,12 @@ BOOL CALLBACK MonitorEnumProc (HMONITOR, HDC, LPRECT lprc, LPARAM lparam)
 	const HWND hparent = (HWND)lparam;
 	const DWORD style = WS_VISIBLE | (hparent ? WS_CHILD : WS_POPUP);
 
-	HWND hwnd = CreateWindowEx (0, APP_NAME_SHORT, APP_NAME, style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
+	const HWND hwnd = CreateWindowEx (0, APP_NAME_SHORT, APP_NAME, style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
 
 	if (hwnd)
-		SetWindowPos (hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+	{
+		SetWindowPos (hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+	}
 
 	return TRUE;
 }
@@ -587,26 +589,20 @@ void StartScreensaver (HWND hparent)
 	if (!hparent)
 		SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, TRUE, &state, SPIF_SENDCHANGE);
 
-		if (!hparent)
-		{
-			EnumDisplayMonitors (nullptr, nullptr, &MonitorEnumProc, 0);
-		}
-		else
-		{
-			RECT rc = {0};
-			GetClientRect (hparent, &rc);
+	if (!hparent)
+	{
+		EnumDisplayMonitors (nullptr, nullptr, &MonitorEnumProc, 0);
+	}
+	else
+	{
+		RECT rc = {0};
+		GetClientRect (hparent, &rc);
 
-			MonitorEnumProc (nullptr, nullptr, &rc, (LPARAM)hparent);
-		}
+		MonitorEnumProc (nullptr, nullptr, &rc, (LPARAM)hparent);
+	}
 
-		while (GetMessage (&msg, nullptr, 0, 0))
-		{
-			TranslateMessage (&msg);
-			DispatchMessage (&msg);
-		}
-
-		if (!hparent)
-			SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, FALSE, &state, SPIF_SENDCHANGE);
+	if (!hparent)
+		SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, FALSE, &state, SPIF_SENDCHANGE);
 }
 
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM)
@@ -627,9 +623,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM)
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
-			//_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
+			_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
-			//StartScreensaver (GetDlgItem(hwnd, IDC_PREVIEW));
+			StartScreensaver (GetDlgItem (hwnd, IDC_PREVIEW));
 
 			break;
 		}
@@ -695,36 +691,48 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 	wcex.lpszClassName = APP_NAME_SHORT;
 	wcex.lpfnWndProc = &ScreensaverProc;
 	wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
-	wcex.hbrBackground = (HBRUSH)GetStockObject (NULL_BRUSH);
+	//wcex.hbrBackground = (HBRUSH)GetStockObject (NULL_BRUSH);
 	wcex.hCursor = ((_wcsnicmp (cmdline, L"/p", 2) == 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
 	wcex.cbWndExtra = sizeof (MATRIX*);
 
 	if (RegisterClassEx (&wcex))
 	{
+		MSG msg = {0};
+
 		_crc_reg = _r_sys_gettickcount ();
 
 		if (_wcsnicmp (cmdline, L"/s", 2) == 0)
 		{
 			StartScreensaver (nullptr);
+
+			while (GetMessage (&msg, nullptr, 0, 0))
+			{
+				TranslateMessage (&msg);
+				DispatchMessage (&msg);
+			}
 		}
 		else if (_wcsnicmp (cmdline, L"/p", 2) == 0)
 		{
-			HWND hctrl = (HWND)wcstoll (LPCWSTR (cmdline + 3), nullptr, 10);
+			const HWND hctrl = (HWND)wcstoll (LPCWSTR (cmdline + 3), nullptr, 10);
 
 			if (hctrl)
 				StartScreensaver (hctrl);
+
+			while (GetMessage (&msg, nullptr, 0, 0))
+			{
+				TranslateMessage (&msg);
+				DispatchMessage (&msg);
+			}
 		}
 		else
 		{
-			HWND hwnd = CreateDialog (nullptr, MAKEINTRESOURCE (IDD_SETTINGS), nullptr, &SettingsProc);
+			const HWND hsetings = CreateDialog (nullptr, MAKEINTRESOURCE (IDD_SETTINGS), nullptr, &SettingsProc);
 
-			if (hwnd)
+			if (hsetings)
 			{
-				MSG msg = {0};
-
 				while (GetMessage (&msg, nullptr, 0, 0) > 0)
 				{
-					if (!IsDialogMessage (hwnd, &msg))
+					if (!IsDialogMessage (hsetings, &msg))
 					{
 						TranslateMessage (&msg);
 						DispatchMessage (&msg);
