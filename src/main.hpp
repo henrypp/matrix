@@ -13,24 +13,30 @@
 // config
 typedef unsigned int GLYPH;
 
+#define UID 0xDEADBEEF
+
 #define GLYPH_REDRAW 0x8000
 #define GLYPH_BLANK 0x4000
 
-#define DENSITY 25
-#define DENSITY_MAX 50
+#define AMOUNT_MIN 1
+#define AMOUNT_MAX 26
+#define AMOUNT_DEFAULT 26
+
 #define DENSITY_MIN 5
+#define DENSITY_MAX 50
+#define DENSITY_DEFAULT 25
+
+#define SPEED_MIN 1
+#define SPEED_MAX 10
+#define SPEED_DEFAULT 8
+
+#define HUE 100
+#define HUE_RANDOM false
 
 // constants inferred from matrix.bmp
 #define MAX_INTENSITY 5 // number of intensity levels
-#define NUM_GLYPHS 26 // number of "glyphs" in each level
-#define GLYPH_WIDTH 14 // width  of each glyph (pixels)
+#define GLYPH_WIDTH 14 // width of each glyph (pixels)
 #define GLYPH_HEIGHT 14 // height of each glyph (pixels)
-
-#define SPEED_MAX 10
-#define SPEED_MIN 1
-#define SPEED 8
-
-#define HUE 100
 
 //
 //	The "matrix" is basically an array of these

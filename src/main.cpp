@@ -12,6 +12,10 @@ rapp app (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT);
 
 ULONGLONG _crc_reg = 0;
 
+UINT nAmount = app.ConfigGet (L"NumGlyphs", AMOUNT_DEFAULT).AsUint ();
+UINT nDensity = app.ConfigGet (L"Density", DENSITY_DEFAULT).AsUint ();
+UINT nHue = app.ConfigGet (L"Hue", HUE).AsUint ();
+
 //
 // this isn't really a random-number generator. It's based on
 // a 16bit CRC algorithm. With the right mask (0xb400) it is possible
@@ -148,7 +152,7 @@ GLYPH GlyphIntensity (GLYPH glyph)
 
 GLYPH RandomGlyph (int intensity)
 {
-	return GLYPH_REDRAW | (intensity << 8) | (crc_rand () % app.ConfigGet (L"NumGlyphs", NUM_GLYPHS).AsUint ());
+	return GLYPH_REDRAW | (intensity << 8) | (crc_rand () % nAmount);
 }
 
 GLYPH DarkenGlyph (GLYPH glyph)
@@ -233,9 +237,8 @@ void ScrollMatrixColumn (MATRIX_COLUMN* col)
 	// change state from blanks <-> runs when the current run as expired
 	if (--col->runlen <= 0)
 	{
-		UINT density = app.ConfigGet (L"Density", DENSITY).AsUint ();
+		const UINT density = DENSITY_MAX - nDensity + DENSITY_MIN;
 
-		density = DENSITY_MAX - density + DENSITY_MIN;
 		if (col->state ^= 1)
 			col->runlen = crc_rand () % (3 * density + DENSITY_MIN);
 		else
@@ -281,7 +284,7 @@ void RandomMatrixColumn (MATRIX_COLUMN *col)
 		if (y >= col->length)
 			break;
 
-		col->glyph[y] = (col->glyph[y] & 0xff00) | (crc_rand () % app.ConfigGet (L"NumGlyphs", NUM_GLYPHS).AsUint ());
+		col->glyph[y] = (col->glyph[y] & 0xff00) | (crc_rand () % nAmount);
 		col->glyph[y] |= GLYPH_REDRAW;
 
 		y += crc_rand () % 10;
@@ -375,12 +378,10 @@ HBITMAP MakeBitmap (HINSTANCE hinst, UINT, double hue)
 
 void SetMatrixBitmap (MATRIX *matrix, INT hue)
 {
-	HBITMAP hBmp;
-
 	hue %= 255;
 
 	// create the new bitmap
-	hBmp = MakeBitmap (GetModuleHandle (nullptr), IDB_GLYPH, hue / 255.0);
+	const HBITMAP hBmp = MakeBitmap (GetModuleHandle (nullptr), IDB_GLYPH, hue / 255.0);
 	DeleteObject (SelectObject (matrix->hdcBitmap, hBmp));
 
 	matrix->hbmBitmap = hBmp;
@@ -391,8 +392,6 @@ void DecodeMatrix (HWND hwnd, MATRIX *matrix)
 {
 	HDC hdc = GetDC (hwnd);
 
-	static UINT nHue = app.ConfigGet (L"Hue", HUE).AsUint ();
-
 	for (int x = 0; x < matrix->numcols; x++)
 	{
 		RandomMatrixColumn (&matrix->column[x]);
@@ -400,7 +399,7 @@ void DecodeMatrix (HWND hwnd, MATRIX *matrix)
 		RedrawMatrixColumn (&matrix->column[x], matrix, hdc, x * GLYPH_WIDTH);
 	}
 
-	SetMatrixBitmap (matrix, app.ConfigGet (L"Random", TRUE).AsBool () ? nHue++ : nHue);
+	SetMatrixBitmap (matrix, app.ConfigGet (L"Random", HUE_RANDOM).AsBool () ? nHue++ : nHue);
 
 	ReleaseDC (hwnd, hdc);
 }
@@ -494,7 +493,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			if (matrix)
 			{
 				SetMatrix (hwnd, matrix);
-				SetTimer (hwnd, 0xDEADBEEF, ((SPEED_MAX - app.ConfigGet (L"Speed", SPEED).AsUint ()) + SPEED_MIN) * 10, 0);
+				SetTimer (hwnd, UID, ((SPEED_MAX - app.ConfigGet (L"Speed", SPEED_DEFAULT).AsUint ()) + SPEED_MIN) * 10, 0);
 
 				return TRUE;
 			}
@@ -512,7 +511,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 		case WM_CLOSE:
 		{
-			KillTimer (hwnd, 0xDEADBEEF);
+			KillTimer (hwnd, UID);
 			DestroyWindow (hwnd);
 
 			return FALSE;
@@ -611,19 +610,25 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM)
 	{
 		case WM_INITDIALOG:
 		{
-			// configure window
-			_r_wnd_center (hwnd, GetParent (hwnd));
-
-			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN, GetSystemMetrics (SM_CXSMICON)));
-			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN, GetSystemMetrics (SM_CXICON)));
-
 			// localize window
 			SetWindowText (hwnd, APP_NAME);
 
+			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETRANGE32, AMOUNT_MIN, AMOUNT_MAX);
+			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, app.ConfigGet (L"NumGlyphs", AMOUNT_DEFAULT).AsUint ());
+
+			SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETRANGE32, DENSITY_MIN, DENSITY_MAX);
+			SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, app.ConfigGet (L"Density", DENSITY_DEFAULT).AsUint ());
+
+			SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETRANGE32, SPEED_MIN, SPEED_MAX);
+			SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETPOS32, 0, app.ConfigGet (L"Speed", SPEED_DEFAULT).AsUint ());
+
+			SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETRANGE32, 0, 255);
+			SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, app.ConfigGet (L"Hue", HUE).AsUint ());
+
+			CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, app.ConfigGet (L"Random", HUE_RANDOM).AsBool ());
+
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-
-			_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
 			StartScreensaver (GetDlgItem (hwnd, IDC_PREVIEW));
 
@@ -649,14 +654,63 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM)
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
-					DestroyWindow (hwnd);
-					break;
+					///break; // without break
 				}
 
 				case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
 					DestroyWindow (hwnd);
+					break;
+				}
+
+				case IDC_AMOUNT_CTRL:
+				{
+					const DWORD new_value = (DWORD)SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_GETPOS32, 0, 0);
+
+					app.ConfigSet (L"NumGlyphs", new_value);
+					nAmount = new_value;
+
+					break;
+				}
+
+				case IDC_DENSITY_CTRL:
+				{
+					const DWORD new_value = (DWORD)SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_GETPOS32, 0, 0);
+
+					app.ConfigSet (L"Density", new_value);
+					nDensity = new_value;
+
+					break;
+				}
+
+				case IDC_SPEED_CTRL:
+				{
+					const DWORD new_value = (DWORD)SendDlgItemMessage (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
+
+					app.ConfigSet (L"Speed", new_value);
+
+					const HWND hpreview = GetDlgItem (hwnd, IDC_PREVIEW);
+
+					KillTimer (hpreview, UID);
+					SetTimer (hpreview, UID, ((SPEED_MAX - new_value) + SPEED_MIN) * 10, 0);
+
+					break;
+				}
+
+				case IDC_HUE_CTRL:
+				{
+					const DWORD new_value = (DWORD)SendDlgItemMessage (hwnd, IDC_HUE, UDM_GETPOS32, 0, 0);
+
+					app.ConfigSet (L"Hue", new_value);
+					nHue = new_value;
+
+					break;
+				}
+
+				case IDC_RANDOMIZECOLORS_CHK:
+				{
+					app.ConfigSet (L"Random", (IsDlgButtonChecked (hwnd, LOWORD (wparam)) == BST_CHECKED));
 					break;
 				}
 			}
@@ -670,11 +724,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM)
 
 INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 {
-	if (app.MutexIsExists (true))
-		return ERROR_ALREADY_EXISTS;
-
-	app.MutexCreate ();
-
 	{
 		INITCOMMONCONTROLSEX icex = {0};
 
@@ -691,8 +740,7 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 	wcex.lpszClassName = APP_NAME_SHORT;
 	wcex.lpfnWndProc = &ScreensaverProc;
 	wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
-	//wcex.hbrBackground = (HBRUSH)GetStockObject (NULL_BRUSH);
-	wcex.hCursor = ((_wcsnicmp (cmdline, L"/p", 2) == 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
+	wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
 	wcex.cbWndExtra = sizeof (MATRIX*);
 
 	if (RegisterClassEx (&wcex))
@@ -726,13 +774,11 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		}
 		else
 		{
-			const HWND hsetings = CreateDialog (nullptr, MAKEINTRESOURCE (IDD_SETTINGS), nullptr, &SettingsProc);
-
-			if (hsetings)
+			if (app.CreateMainWindow (IDD_SETTINGS, IDI_MAIN, &SettingsProc))
 			{
 				while (GetMessage (&msg, nullptr, 0, 0) > 0)
 				{
-					if (!IsDialogMessage (hsetings, &msg))
+					if (!IsDialogMessage (app.GetHWND (), &msg))
 					{
 						TranslateMessage (&msg);
 						DispatchMessage (&msg);

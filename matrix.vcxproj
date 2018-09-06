@@ -125,7 +125,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;_APP_ALWAYSONTOP=true;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -163,7 +163,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;_APP_ALWAYSONTOP=true;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -206,7 +206,7 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;_APP_ALWAYSONTOP=true;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
@@ -248,7 +248,7 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_ABOUT;_APP_NO_SETTINGS;_APP_NO_UPDATES;_APP_ALWAYSONTOP=true;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>

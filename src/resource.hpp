@@ -9,11 +9,19 @@
 #define IDD_SETTINGS 1
 
 // Settings Dlg
-#define IDC_PREVIEW 145
-#define IDC_SAVE 146
-#define IDC_RESET 147
-#define IDC_CLOSE 148
-#define IDC_WIKI 149
+#define IDC_PREVIEW 100
+#define IDC_SAVE 101
+#define IDC_CLOSE 102
+
+#define IDC_DENSITY_CTRL 103
+#define IDC_DENSITY 104
+#define IDC_AMOUNT_CTRL 105
+#define IDC_AMOUNT 106
+#define IDC_SPEED_CTRL 107
+#define IDC_SPEED 108
+#define IDC_HUE_CTRL 109
+#define IDC_HUE 110
+#define IDC_RANDOMIZECOLORS_CHK 111
 
 // Bitmaps
 #define IDB_GLYPH 1
