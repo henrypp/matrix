@@ -15,6 +15,9 @@ typedef unsigned int GLYPH;
 
 #define UID 0xDEADBEEF
 
+#define CLASS_FULLSCREEN APP_NAME_SHORT L"_Fullscreen"
+#define CLASS_PREVIEW APP_NAME_SHORT L"_Preview"
+
 #define GLYPH_REDRAW 0x8000
 #define GLYPH_BLANK 0x4000
 #define RND_MASK 0xB400

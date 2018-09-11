@@ -517,7 +517,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		}
 
 		case WM_KEYDOWN:
-		//case WM_SYSKEYDOWN:
+			//case WM_SYSKEYDOWN:
 		{
 			if (wparam != VK_ESCAPE && app.ConfigGet (L"IsEscOnly", false).AsBool ())
 				return FALSE;
@@ -573,7 +573,7 @@ BOOL CALLBACK MonitorEnumProc (HMONITOR, HDC, LPRECT lprc, LPARAM lparam)
 	const HWND hparent = (HWND)lparam;
 	const DWORD style = hparent ? WS_CHILD : WS_POPUP;
 
-	const HWND hwnd = CreateWindowEx (WS_EX_TOPMOST, APP_NAME_SHORT, APP_NAME, WS_VISIBLE | style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
+	const HWND hwnd = CreateWindowEx (WS_EX_TOPMOST, hparent ? CLASS_PREVIEW : CLASS_FULLSCREEN, APP_NAME, WS_VISIBLE | style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
 
 	if (hwnd)
 	{
@@ -645,6 +645,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 			_r_ctrl_settext (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _APP_WEBSITE_URL, _APP_GITHUB_URL);
 
+			_r_wnd_addstyle (hwnd, IDC_SHOW, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_RESET, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
@@ -726,7 +727,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
-					DestroyWindow (hwnd);
+					PostMessage (hwnd, WM_CLOSE, 0, 0);
 					break;
 				}
 
@@ -780,9 +781,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if (hmonitor)
 					{
 						if (GetMonitorInfo (hmonitor, &monitorInfo))
-						{
 							CopyRect (&rc, &monitorInfo.rcMonitor);
-						}
 					}
 					else
 					{
@@ -885,11 +884,16 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		wcex.cbSize = sizeof (wcex);
 		wcex.hInstance = hinst;
 		wcex.style = CS_HREDRAW | CS_VREDRAW;
-		wcex.lpszClassName = APP_NAME_SHORT;
+		wcex.lpszClassName = CLASS_PREVIEW;
 		wcex.lpfnWndProc = &ScreensaverProc;
 		wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
-		wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDR_CURSOR)));
+		wcex.hCursor = LoadCursor (nullptr, IDC_ARROW);
 		wcex.cbWndExtra = sizeof (MATRIX*);
+
+		RegisterClassEx (&wcex);
+
+		wcex.lpszClassName = CLASS_FULLSCREEN;
+		wcex.hCursor = LoadCursor (hinst, MAKEINTRESOURCE (IDR_CURSOR));
 
 		RegisterClassEx (&wcex);
 	}
@@ -948,7 +952,8 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 			}
 		}
 
-		UnregisterClass (APP_NAME_SHORT, hinst);
+		UnregisterClass (CLASS_PREVIEW, hinst);
+		UnregisterClass (CLASS_FULLSCREEN, hinst);
 	}
 
 	return ERROR_SUCCESS;
