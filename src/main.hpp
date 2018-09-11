@@ -67,16 +67,17 @@ typedef struct
 
 typedef struct
 {
-	MATRIX_COLUMN column[1];
+	int width = 0;
+	int height = 0;
+	int numcols = 0;
+	int numrows = 0;
 
 	// bitmap containing glyphs.
 	HDC hdcBitmap = nullptr;
 	HBITMAP hbmBitmap = nullptr;
 
-	int width = 0;
-	int height = 0;
-	int numcols = 0;
-	int numrows = 0;
+	MATRIX_COLUMN column[1];
+
 } MATRIX;
 
 #endif // __MAIN_H__
