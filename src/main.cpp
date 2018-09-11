@@ -3,6 +3,7 @@
 // Copyright (c) 2011-2018 Henry++
 
 #include <windows.h>
+//#include <scrnsave.h>
 
 #include "main.hpp"
 #include "rapp.hpp"
@@ -30,10 +31,8 @@ HWND hmatrix = nullptr;
 //
 WORD crc_msgrand (WORD reg)
 {
-	static const WORD mask = 0xb400;
-
 	if (reg & 1)
-		reg = (reg >> 1) ^ mask;
+		reg = (reg >> 1) ^ RND_MASK;
 	else
 		reg = (reg >> 1);
 
@@ -42,10 +41,8 @@ WORD crc_msgrand (WORD reg)
 
 UINT crc_rand ()
 {
-	static const WORD mask = 0xb400;
-
 	if (_crc_reg & 1)
-		_crc_reg = (_crc_reg >> 1) ^ mask;
+		_crc_reg = (_crc_reg >> 1) ^ RND_MASK;
 	else
 		_crc_reg = (_crc_reg >> 1);
 
@@ -137,16 +134,6 @@ void RGBtoHSL (COLORREF col, double *H, double *S, double *L)
 	*L = l;
 }
 
-MATRIX* GetMatrix (HWND hwnd)
-{
-	return (MATRIX*)GetWindowLongPtr (hwnd, GWLP_USERDATA);
-}
-
-void SetMatrix (HWND hwnd, MATRIX* matrix)
-{
-	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)matrix);
-}
-
 GLYPH GlyphIntensity (GLYPH glyph)
 {
 	return ((glyph & 0x7f00) >> 8);
@@ -173,8 +160,7 @@ void DrawGlyph (MATRIX *matrix, HDC hdc, int xpos, int ypos, GLYPH glyph)
 	int intensity = GlyphIntensity (glyph);
 	int glyphidx = glyph & 0xff;
 
-	BitBlt (hdc, xpos, ypos, GLYPH_WIDTH, GLYPH_HEIGHT, matrix->hdcBitmap,
-		glyphidx * GLYPH_WIDTH, intensity * GLYPH_HEIGHT, SRCCOPY);
+	BitBlt (hdc, xpos, ypos, GLYPH_WIDTH, GLYPH_HEIGHT, matrix->hdcBitmap, glyphidx * GLYPH_WIDTH, intensity * GLYPH_HEIGHT, SRCCOPY);
 }
 
 void RedrawBlip (GLYPH *glypharr, int blippos)
@@ -194,13 +180,13 @@ void ScrollMatrixColumn (MATRIX_COLUMN* col)
 	if (!col->started)
 	{
 		if (--col->countdown <= 0)
-			col->started = TRUE;
+			col->started = true;
 
 		return;
 	}
 
 	// "seed" the glyph-run
-	lastglyph = col->state ? (GLYPH)0 : (GLYPH)(MAX_INTENSITY << 8);
+	lastglyph = col->state ? 0 : (MAX_INTENSITY << 8);
 
 	//
 	// loop over the entire length of the column, looking for changes
@@ -214,7 +200,8 @@ void ScrollMatrixColumn (MATRIX_COLUMN* col)
 		// bottom-most part of "run". Insert a new character (glyph)
 		// at the end to lengthen the run down the screen..gives the
 		// impression that the run is "falling" down the screen
-		if (GlyphIntensity (thisglyph) < GlyphIntensity (lastglyph) &&
+		if (
+			GlyphIntensity (thisglyph) < GlyphIntensity (lastglyph) &&
 			GlyphIntensity (thisglyph) == 0)
 		{
 			col->glyph[y] = RandomGlyph (MAX_INTENSITY - 1);
@@ -242,9 +229,9 @@ void ScrollMatrixColumn (MATRIX_COLUMN* col)
 		const UINT density = DENSITY_MAX - nDensity + DENSITY_MIN;
 
 		if (col->state ^= 1)
-			col->runlen = crc_rand () % (3 * density + DENSITY_MIN);
+			col->runlen = crc_rand () % (3 * density / 2) + DENSITY_MIN;
 		else
-			col->runlen = crc_rand () % (DENSITY_MAX - density + 1) + (DENSITY_MIN * 2);
+			col->runlen = crc_rand () % (DENSITY_MAX + 1 - density) + (DENSITY_MIN * 2);
 	}
 
 	//
@@ -269,7 +256,6 @@ void ScrollMatrixColumn (MATRIX_COLUMN* col)
 	// now redraw blip at new position
 	if (col->blippos >= 0 && col->blippos < col->length)
 		RedrawBlip (col->glyph, col->blippos);
-
 }
 
 //
@@ -316,50 +302,41 @@ void RedrawMatrixColumn (MATRIX_COLUMN *col, MATRIX *matrix, HDC hdc, int xpos)
 	}
 }
 
-HBITMAP MakeBitmap (HINSTANCE hinst, UINT, double hue)
+HBITMAP MakeBitmap (HDC hdc, HINSTANCE hinst, UINT, double hue)
 {
-	HBITMAP hDIB;
-	HANDLE  hOldBmp;
-	HBITMAP hBmp;
-	HDC		hdc;
-
-	DIBSECTION dib;
-	BITMAPINFOHEADER *bih;
-	DWORD *dest = 0;
-	BYTE  *src;
+	DIBSECTION dib = {0};
+	LPBITMAPINFOHEADER lpbih;
+	LPDWORD dest = nullptr;
 
 	RGBQUAD pal[256] = {0};
 
-	// load the 8bit image 
-	hBmp = (HBITMAP)LoadImage (hinst, MAKEINTRESOURCE (IDB_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+	// load the 8bit image
+	const HBITMAP hBmp = (HBITMAP)LoadImage (hinst, MAKEINTRESOURCE (IDB_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
 	// extract the colour table
-	hdc = CreateCompatibleDC (nullptr);
-	hOldBmp = SelectObject (hdc, hBmp);
-	GetDIBColorTable (hdc, 0, 256, pal);
-	SelectObject (hdc, hOldBmp);
+	const HDC hdc_c = CreateCompatibleDC (hdc);
+	const HANDLE hOldBmp = SelectObject (hdc_c, hBmp);
+	GetDIBColorTable (hdc_c, 0, 256, pal);
+	SelectObject (hdc_c, hOldBmp);
 
 	GetObject (hBmp, sizeof (dib), &dib);
-	src = (BYTE*)dib.dsBm.bmBits;
-	bih = &dib.dsBmih;
+	LPBYTE src = (LPBYTE)dib.dsBm.bmBits;
+	lpbih = &dib.dsBmih;
 
 	// change to a 32bit bitmap
 	dib.dsBm.bmBitsPixel = 32;
 	dib.dsBm.bmPlanes = 1;
 	dib.dsBm.bmWidthBytes = dib.dsBm.bmWidth * 4;
-	dib.dsBm.bmType = 0;
 	dib.dsBmih.biBitCount = 32;
 	dib.dsBmih.biPlanes = 1;
-	dib.dsBmih.biCompression = 0;
-	dib.dsBmih.biSizeImage = dib.dsBmih.biWidth * dib.dsBmih.biHeight * 4;
-	dib.dsBmih.biClrUsed = 0;
-	dib.dsBmih.biClrImportant = 0;
+	dib.dsBmih.biCompression = BI_RGB;
+	dib.dsBmih.biSizeImage = (dib.dsBmih.biWidth * dib.dsBmih.biHeight) * 4;
 
 	// create a new (blank) 32bit DIB section
-	hDIB = CreateDIBSection (hdc, (BITMAPINFO *)&dib.dsBmih, DIB_RGB_COLORS, (void**)&dest, 0, 0);
+	const HBITMAP hDIB = CreateDIBSection (hdc_c, (LPBITMAPINFO)&dib.dsBmih, DIB_RGB_COLORS, (LPVOID*)&dest, 0, 0);
 
 	// copy each pixel
-	for (int i = 0; i < bih->biWidth * bih->biHeight; i++)
+	for (int i = 0; i < lpbih->biWidth * lpbih->biHeight; i++)
 	{
 		// convert 8bit palette entry to 32bit colour
 		const RGBQUAD rgb = pal[*src++];
@@ -374,16 +351,17 @@ HBITMAP MakeBitmap (HINSTANCE hinst, UINT, double hue)
 	}
 
 	DeleteObject (hBmp);
-	DeleteDC (hdc);
+	DeleteDC (hdc_c);
+
 	return hDIB;
 }
 
-void SetMatrixBitmap (MATRIX *matrix, INT hue)
+void SetMatrixBitmap (HDC hdc, MATRIX *matrix, INT hue)
 {
 	hue %= 255;
 
 	// create the new bitmap
-	const HBITMAP hBmp = MakeBitmap (GetModuleHandle (nullptr), IDB_GLYPH, hue / 255.0);
+	const HBITMAP hBmp = MakeBitmap (hdc, app.GetHINSTANCE (), IDB_GLYPH, hue / 255.0);
 	DeleteObject (SelectObject (matrix->hdcBitmap, hBmp));
 
 	matrix->hbmBitmap = hBmp;
@@ -392,7 +370,7 @@ void SetMatrixBitmap (MATRIX *matrix, INT hue)
 
 void DecodeMatrix (HWND hwnd, MATRIX *matrix)
 {
-	HDC hdc = GetDC (hwnd);
+	const HDC hdc = GetDC (hwnd);
 
 	for (int x = 0; x < matrix->numcols; x++)
 	{
@@ -401,14 +379,17 @@ void DecodeMatrix (HWND hwnd, MATRIX *matrix)
 		RedrawMatrixColumn (&matrix->column[x], matrix, hdc, x * GLYPH_WIDTH);
 	}
 
-	SetMatrixBitmap (matrix, app.ConfigGet (L"Random", HUE_RANDOM).AsBool () ? nHue++ : nHue);
+	if (app.ConfigGet (L"Random", HUE_RANDOM).AsBool ())
+		nHue = (UINT)_r_rand (HUE_MIN, HUE_MAX);
+
+	SetMatrixBitmap (hdc, matrix, nHue);
 
 	ReleaseDC (hwnd, hdc);
 }
 
 void RefreshMatrix (HWND hwnd)
 {
-	MATRIX *matrix = GetMatrix (hwnd);
+	MATRIX *matrix = (MATRIX*)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	if (!matrix)
 		return;
@@ -425,16 +406,15 @@ void RefreshMatrix (HWND hwnd)
 //
 //	Allocate matrix structures
 //
-MATRIX *CreateMatrix (HWND, int width, int height)
+MATRIX *CreateMatrix (int width, int height)
 {
-	MATRIX *matrix;
-	HDC hdc;
-
-	int rows = height / GLYPH_HEIGHT + 1;
-	int cols = width / GLYPH_WIDTH + 1;
+	const int rows = height / GLYPH_HEIGHT + 1;
+	const int cols = width / GLYPH_WIDTH + 1;
 
 	// allocate matrix!
-	if ((matrix = (MATRIX*)malloc (sizeof (MATRIX) + sizeof (MATRIX_COLUMN) * cols)) == nullptr)
+	MATRIX *matrix = (MATRIX*)malloc (sizeof (MATRIX) + (sizeof (MATRIX_COLUMN) * cols));
+
+	if (!matrix)
 		return 0;
 
 	matrix->numcols = cols;
@@ -445,7 +425,7 @@ MATRIX *CreateMatrix (HWND, int width, int height)
 	for (int x = 0; x < cols; x++)
 	{
 		matrix->column[x].length = rows;
-		matrix->column[x].started = FALSE;
+		matrix->column[x].started = false;
 		matrix->column[x].countdown = crc_rand () % 100;
 		matrix->column[x].state = crc_rand () % 2;
 		matrix->column[x].runlen = crc_rand () % 20 + 3;
@@ -457,12 +437,11 @@ MATRIX *CreateMatrix (HWND, int width, int height)
 	}
 
 	// Load bitmap!!
-	hdc = GetDC (nullptr);
+	const HDC hdc = GetDC (nullptr);
 
-	matrix->hbmBitmap = MakeBitmap (app.GetHINSTANCE (), IDB_GLYPH, (double)nHue / 255.0);
+	matrix->hbmBitmap = MakeBitmap (hdc, app.GetHINSTANCE (), IDB_GLYPH, (double)nHue / 255.0);
 	matrix->hdcBitmap = CreateCompatibleDC (hdc);
 	SelectObject (matrix->hdcBitmap, matrix->hbmBitmap);
-
 	ReleaseDC (nullptr, hdc);
 
 	return matrix;
@@ -486,11 +465,11 @@ void DestroyMatrix (MATRIX *matrix)
 
 LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	static MATRIX* matrix;
+	MATRIX* matrix = (MATRIX*)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	static POINT ptLast = {0};
 	static POINT ptCursor = {0};
-	static BOOL fFirstTime = TRUE;
+	static bool fFirstTime = true;
 
 	switch (msg)
 	{
@@ -499,17 +478,15 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			if (!hmatrix)
 				hmatrix = hwnd;
 
-			matrix = CreateMatrix (hwnd, LPCREATESTRUCT (lparam)->cx, LPCREATESTRUCT (lparam)->cy);
+			matrix = CreateMatrix ((LPCREATESTRUCT (lparam)->cx), (LPCREATESTRUCT (lparam)->cy));
 
-			if (matrix)
-			{
-				SetMatrix (hwnd, matrix);
-				SetTimer (hwnd, UID, ((SPEED_MAX - app.ConfigGet (L"Speed", SPEED_DEFAULT).AsUint ()) + SPEED_MIN) * 10, 0);
+			if (!matrix)
+				return FALSE;
 
-				return TRUE;
-			}
+			SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)matrix);
+			SetTimer (hwnd, UID, ((SPEED_MAX - app.ConfigGet (L"Speed", SPEED_DEFAULT).AsUint ()) + SPEED_MIN) * 10, 0);
 
-			return FALSE;
+			return TRUE;
 		}
 
 		case WM_NCDESTROY:
@@ -520,19 +497,22 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			return FALSE;
 		}
 
-		case WM_CLOSE:
-		{
-			hmatrix = nullptr;
-
-			KillTimer (hwnd, UID);
-			DestroyWindow (hwnd);
-
-			return FALSE;
-		}
-
 		case WM_TIMER:
 		{
 			DecodeMatrix (hwnd, matrix);
+			return FALSE;
+		}
+
+		case WM_CLOSE:
+		{
+			//if (VerifyPassword (hwnd))
+			{
+				hmatrix = nullptr;
+
+				KillTimer (hwnd, UID);
+				DestroyWindow (hwnd);
+			}
+
 			return FALSE;
 		}
 
@@ -552,21 +532,22 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		case WM_MOUSEMOVE:
 		{
 			if (GetParent (hwnd))
-			{
 				return FALSE;
-			}
 
 			if (fFirstTime)
 			{
 				GetCursorPos (&ptLast);
-				fFirstTime = FALSE;
+				fFirstTime = false;
 			}
 
 			GetCursorPos (&ptCursor);
 
-			if (abs (ptCursor.x - ptLast.x) >= 5 || abs (ptCursor.y - ptLast.y) >= 5)
+			if (
+				abs (ptCursor.x - ptLast.x) >= GetSystemMetrics (SM_CXSMICON) / 2 ||
+				abs (ptCursor.y - ptLast.y) >= GetSystemMetrics (SM_CYSMICON) / 2
+				)
 			{
-				DestroyWindow (hwnd);
+				PostMessage (hwnd, WM_CLOSE, 0, 0);
 			}
 
 			ptLast = ptCursor;
@@ -581,9 +562,9 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 BOOL CALLBACK MonitorEnumProc (HMONITOR, HDC, LPRECT lprc, LPARAM lparam)
 {
 	const HWND hparent = (HWND)lparam;
-	const DWORD style = WS_VISIBLE | (hparent ? WS_CHILD : WS_POPUP);
+	const DWORD style = hparent ? WS_CHILD : WS_POPUP;
 
-	const HWND hwnd = CreateWindowEx (0, APP_NAME_SHORT, APP_NAME, style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
+	const HWND hwnd = CreateWindowEx (WS_EX_TOPMOST, APP_NAME_SHORT, APP_NAME, WS_VISIBLE | style, lprc->left, lprc->top, _R_RECT_WIDTH (lprc), _R_RECT_HEIGHT (lprc), hparent, nullptr, app.GetHINSTANCE (), nullptr);
 
 	if (hwnd)
 	{
@@ -852,6 +833,7 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 
 		wcex.cbSize = sizeof (wcex);
 		wcex.hInstance = hinst;
+		wcex.style = CS_HREDRAW | CS_VREDRAW;
 		wcex.lpszClassName = APP_NAME_SHORT;
 		wcex.lpfnWndProc = &ScreensaverProc;
 		wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);

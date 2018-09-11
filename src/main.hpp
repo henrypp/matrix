@@ -17,6 +17,7 @@ typedef unsigned int GLYPH;
 
 #define GLYPH_REDRAW 0x8000
 #define GLYPH_BLANK 0x4000
+#define RND_MASK 0xB400
 
 #define AMOUNT_MIN 1
 #define AMOUNT_MAX 26
@@ -47,10 +48,10 @@ typedef unsigned int GLYPH;
 //
 typedef struct
 {
-	BOOL	state;
+	int		state;
 	int		countdown;
 
-	BOOL	started;
+	bool	started;
 	int		runlen;
 
 	int		blippos;
