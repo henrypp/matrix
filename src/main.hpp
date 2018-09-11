@@ -75,7 +75,6 @@ typedef struct
 	HBITMAP hbmBitmap = nullptr;
 
 	MATRIX_COLUMN column[1];
-
 } MATRIX;
 
 #endif // __MAIN_H__
