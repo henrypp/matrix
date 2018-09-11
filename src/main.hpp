@@ -61,8 +61,6 @@ typedef struct
 	int length = 0;
 
 	bool started = false;
-
-
 } MATRIX_COLUMN;
 
 typedef struct
