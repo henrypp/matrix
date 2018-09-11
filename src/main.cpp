@@ -311,7 +311,7 @@ HBITMAP MakeBitmap (HDC hdc, HINSTANCE hinst, UINT, double hue)
 	RGBQUAD pal[256] = {0};
 
 	// load the 8bit image
-	const HBITMAP hBmp = (HBITMAP)LoadImage (hinst, MAKEINTRESOURCE (IDB_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+	const HBITMAP hBmp = (HBITMAP)LoadImage (hinst, MAKEINTRESOURCE (IDR_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
 	// extract the colour table
 	const HDC hdc_c = CreateCompatibleDC (hdc);
@@ -361,7 +361,7 @@ void SetMatrixBitmap (HDC hdc, MATRIX *matrix, INT hue)
 	hue %= 255;
 
 	// create the new bitmap
-	const HBITMAP hBmp = MakeBitmap (hdc, app.GetHINSTANCE (), IDB_GLYPH, hue / 255.0);
+	const HBITMAP hBmp = MakeBitmap (hdc, app.GetHINSTANCE (), IDR_GLYPH, hue / 255.0);
 	DeleteObject (SelectObject (matrix->hdcBitmap, hBmp));
 
 	matrix->hbmBitmap = hBmp;
@@ -439,7 +439,7 @@ MATRIX *CreateMatrix (int width, int height)
 	// Load bitmap!!
 	const HDC hdc = GetDC (nullptr);
 
-	matrix->hbmBitmap = MakeBitmap (hdc, app.GetHINSTANCE (), IDB_GLYPH, (double)nHue / 255.0);
+	matrix->hbmBitmap = MakeBitmap (hdc, app.GetHINSTANCE (), IDR_GLYPH, (double)nHue / 255.0);
 	matrix->hdcBitmap = CreateCompatibleDC (hdc);
 	SelectObject (matrix->hdcBitmap, matrix->hbmBitmap);
 	ReleaseDC (nullptr, hdc);
@@ -517,15 +517,18 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		}
 
 		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
+		//case WM_SYSKEYDOWN:
 		{
+			if (wparam != VK_ESCAPE && app.ConfigGet (L"IsEscOnly", false).AsBool ())
+				return FALSE;
+
 			PostMessage (hwnd, WM_CLOSE, 0, 0);
 			return FALSE;
 		}
 
 		case WM_MOUSEMOVE:
 		{
-			if (GetParent (hwnd))
+			if (GetParent (hwnd) || app.ConfigGet (L"IsEscOnly", false).AsBool ())
 				return FALSE;
 
 			if (fFirstTime)
@@ -553,7 +556,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		case WM_RBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		{
-			if (GetParent (hwnd))
+			if (GetParent (hwnd) || app.ConfigGet (L"IsEscOnly", false).AsBool ())
 				return FALSE;
 
 			PostMessage (hwnd, WM_CLOSE, 0, 0);
@@ -635,8 +638,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, app.ConfigGet (L"Hue", HUE_DEFAULT).AsUint ());
 
 			CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, app.ConfigGet (L"Random", HUE_RANDOM).AsBool ());
+			CheckDlgButton (hwnd, IDC_ISCLOSEONESC_CHK, app.ConfigGet (L"IsEscOnly", false).AsBool ());
 
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
+			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
 			_r_ctrl_settext (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _APP_WEBSITE_URL, _APP_GITHUB_URL);
 
@@ -742,6 +747,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, HUE_RANDOM ? BST_CHECKED : BST_UNCHECKED);
 						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
 
+						app.ConfigSet (L"IsEscOnly", false);
+						CheckDlgButton (hwnd, IDC_ISCLOSEONESC_CHK, HUE_RANDOM ? BST_CHECKED : BST_UNCHECKED);
+						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
+
 						app.ConfigSet (L"Speed", (DWORD)SPEED_DEFAULT);
 
 						SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, AMOUNT_DEFAULT);
@@ -840,6 +849,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
+
+				case IDC_ISCLOSEONESC_CHK:
+				{
+					app.ConfigSet (L"IsEscOnly", (IsDlgButtonChecked (hwnd, LOWORD (wparam)) == BST_CHECKED));
+					break;
+				}
 			}
 
 			break;
@@ -873,7 +888,7 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		wcex.lpszClassName = APP_NAME_SHORT;
 		wcex.lpfnWndProc = &ScreensaverProc;
 		wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
-		wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
+		wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDR_CURSOR)));
 		wcex.cbWndExtra = sizeof (MATRIX*);
 
 		RegisterClassEx (&wcex);
@@ -885,6 +900,11 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 
 		if (_wcsnicmp (cmdline, L"/s", 2) == 0)
 		{
+			if (app.MutexIsExists (false))
+				return ERROR_SUCCESS;
+
+			app.MutexCreate ();
+
 			StartScreensaver (nullptr);
 
 			while (GetMessage (&msg, nullptr, 0, 0))
@@ -895,6 +915,11 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		}
 		else if (_wcsnicmp (cmdline, L"/p", 2) == 0)
 		{
+			if (app.MutexIsExists (false))
+				return ERROR_SUCCESS;
+
+			app.MutexCreate ();
+
 			const HWND hctrl = (HWND)wcstoll (LPCWSTR (cmdline + 3), nullptr, 10);
 
 			if (hctrl)

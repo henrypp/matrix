@@ -28,12 +28,13 @@
 #define IDC_HUE 115
 #define IDC_HUE_RANGE 116
 #define IDC_RANDOMIZECOLORS_CHK 117
+#define IDC_ISCLOSEONESC_CHK 118
 
 // Bitmaps
-#define IDB_GLYPH 1
+#define IDR_GLYPH 1
 
 // Cursors
-#define IDC_CURSOR 118
+#define IDR_CURSOR 2
 
 // Icons
 #define IDI_MAIN 100
