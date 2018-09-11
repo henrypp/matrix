@@ -8,3 +8,5 @@ Originally written by J Brown 2003.
 
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
 Support: support@henrypp.org<br />
+<br />
+(c) 2011-2018 Henry++
