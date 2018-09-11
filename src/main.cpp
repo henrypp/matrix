@@ -18,6 +18,7 @@ UINT nDensity = app.ConfigGet (L"Density", DENSITY_DEFAULT).AsUint ();
 UINT nHue = app.ConfigGet (L"Hue", HUE_DEFAULT).AsUint ();
 
 HWND hmatrix = nullptr;
+bool is_preview = false;
 
 //
 // this isn't really a random-number generator. It's based on
@@ -492,14 +493,12 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		case WM_NCDESTROY:
 		{
 			DestroyMatrix (matrix);
+
+			if (is_preview && !GetParent (hwnd))
+				return FALSE;
+
 			PostQuitMessage (0);
 
-			return FALSE;
-		}
-
-		case WM_TIMER:
-		{
-			DecodeMatrix (hwnd, matrix);
 			return FALSE;
 		}
 
@@ -516,8 +515,14 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			return FALSE;
 		}
 
+		case WM_TIMER:
+		{
+			DecodeMatrix (hwnd, matrix);
+			return FALSE;
+		}
+
 		case WM_KEYDOWN:
-			//case WM_SYSKEYDOWN:
+		case WM_SYSKEYDOWN:
 		{
 			if (wparam != VK_ESCAPE && app.ConfigGet (L"IsEscOnly", false).AsBool ())
 				return FALSE;
@@ -540,8 +545,8 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			GetCursorPos (&ptCursor);
 
 			if (
-				abs (ptCursor.x - ptLast.x) >= GetSystemMetrics (SM_CXSMICON) / 2 ||
-				abs (ptCursor.y - ptLast.y) >= GetSystemMetrics (SM_CYSMICON) / 2
+				abs (ptCursor.x - ptLast.x) >= (GetSystemMetrics (SM_CXSMICON) / 2) ||
+				abs (ptCursor.y - ptLast.y) >= (GetSystemMetrics (SM_CYSMICON) / 2)
 				)
 			{
 				PostMessage (hwnd, WM_CLOSE, 0, 0);
@@ -939,6 +944,8 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		}
 		else
 		{
+			is_preview = true;
+
 			if (app.CreateMainWindow (IDD_SETTINGS, IDI_MAIN, &SettingsProc))
 			{
 				while (GetMessage (&msg, nullptr, 0, 0) > 0)
