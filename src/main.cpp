@@ -649,7 +649,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 			CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, app.ConfigGet (L"Random", HUE_RANDOM).AsBool ());
 
-			_r_wnd_addstyle (hwnd, IDC_START, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
+			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
+
+			_r_ctrl_settext (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _APP_WEBSITE_URL, _APP_GITHUB_URL);
+
+			_r_wnd_addstyle (hwnd, IDC_RESET, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			StartScreensaver (hpreview);
@@ -699,6 +703,30 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			break;
 		}
 
+		case WM_NOTIFY:
+		{
+			LPNMHDR nmlp = (LPNMHDR)lparam;
+
+			switch (nmlp->code)
+			{
+				case NM_CLICK:
+				case NM_RETURN:
+				{
+					PNMLINK nmlink = (PNMLINK)lparam;
+
+					if (nmlink->item.szUrl[0] && nmlp->idFrom == IDC_ABOUT)
+					{
+						if (nmlink->item.szUrl && nmlink->item.szUrl[0])
+							ShellExecute (hwnd, nullptr, nmlink->item.szUrl, nullptr, nullptr, SW_SHOWDEFAULT);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
+
 		case WM_COMMAND:
 		{
 			switch (LOWORD (wparam))
@@ -710,9 +738,34 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					break;
 				}
 
-				case IDC_START:
+				case IDC_RESET:
 				{
-					//StartScreensaver ();
+					if (_r_msg (hwnd, MB_YESNO | MB_ICONEXCLAMATION | MB_DEFBUTTON2, APP_NAME, nullptr, L"Are you really sure you want to reset all application settings?") == IDYES)
+					{
+						app.ConfigSet (L"NumGlyphs", (DWORD)AMOUNT_DEFAULT);
+						nAmount = AMOUNT_DEFAULT;
+
+						app.ConfigSet (L"Density", (DWORD)DENSITY_DEFAULT);
+						nDensity = DENSITY_DEFAULT;
+
+						app.ConfigSet (L"Hue", (DWORD)HUE_DEFAULT);
+						nHue = HUE_DEFAULT;
+
+						app.ConfigSet (L"Random", HUE_RANDOM);
+						CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, HUE_RANDOM ? BST_CHECKED : BST_UNCHECKED);
+						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
+
+						app.ConfigSet (L"Speed", (DWORD)SPEED_DEFAULT);
+
+						SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, AMOUNT_DEFAULT);
+						SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, DENSITY_DEFAULT);
+						SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETPOS32, 0, SPEED_DEFAULT);
+						SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, HUE_DEFAULT);
+
+						KillTimer (hmatrix, UID);
+						SetTimer (hmatrix, UID, ((SPEED_MAX - SPEED_DEFAULT) + SPEED_MIN) * 10, 0);
+					}
+
 					break;
 				}
 
@@ -760,6 +813,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDC_RANDOMIZECOLORS_CHK:
 				{
+					const bool is_enabled = (IsDlgButtonChecked (hwnd, LOWORD (wparam)) == BST_CHECKED);
+
+					_r_ctrl_enable (hwnd, IDC_HUE_CTRL, !is_enabled);
+					_r_ctrl_enable (hwnd, IDC_HUE, !is_enabled);
+
 					app.ConfigSet (L"Random", (IsDlgButtonChecked (hwnd, LOWORD (wparam)) == BST_CHECKED));
 					nHue = app.ConfigGet (L"Hue", HUE_DEFAULT).AsUint (); // reset hue
 
@@ -776,6 +834,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 {
+	_crc_reg = _r_sys_gettickcount ();
+
+	// init controls
 	{
 		INITCOMMONCONTROLSEX icex = {0};
 
@@ -785,21 +846,24 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 		InitCommonControlsEx (&icex);
 	}
 
-	WNDCLASSEX wcex = {0};
+	// register class
+	{
+		WNDCLASSEX wcex = {0};
 
-	wcex.cbSize = sizeof (wcex);
-	wcex.hInstance = hinst;
-	wcex.lpszClassName = APP_NAME_SHORT;
-	wcex.lpfnWndProc = &ScreensaverProc;
-	wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
-	wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
-	wcex.cbWndExtra = sizeof (MATRIX*);
+		wcex.cbSize = sizeof (wcex);
+		wcex.hInstance = hinst;
+		wcex.lpszClassName = APP_NAME_SHORT;
+		wcex.lpfnWndProc = &ScreensaverProc;
+		wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
+		wcex.hCursor = ((_wcsnicmp (cmdline, L"/s", 2) != 0) ? LoadCursor (nullptr, IDC_ARROW) : LoadCursor (hinst, MAKEINTRESOURCE (IDC_CURSOR)));
+		wcex.cbWndExtra = sizeof (MATRIX*);
 
-	if (RegisterClassEx (&wcex))
+		RegisterClassEx (&wcex);
+	}
+
+	// parse arguments
 	{
 		MSG msg = {0};
-
-		_crc_reg = _r_sys_gettickcount ();
 
 		if (_wcsnicmp (cmdline, L"/s", 2) == 0)
 		{
@@ -816,12 +880,14 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 			const HWND hctrl = (HWND)wcstoll (LPCWSTR (cmdline + 3), nullptr, 10);
 
 			if (hctrl)
+			{
 				StartScreensaver (hctrl);
 
-			while (GetMessage (&msg, nullptr, 0, 0))
-			{
-				TranslateMessage (&msg);
-				DispatchMessage (&msg);
+				while (GetMessage (&msg, nullptr, 0, 0))
+				{
+					TranslateMessage (&msg);
+					DispatchMessage (&msg);
+				}
 			}
 		}
 		else
