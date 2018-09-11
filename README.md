@@ -1,6 +1,6 @@
 ## Matrix Screensaver
 
-![Matrix Screensaver](https://www.henrypp.org/images/matrix.png)
+![Matrix Screensaver](https://www.henrypp.org/images/matrix.png?fix)
 
 The Matrix ScreenSaver is a small, fast and elegant Windows version of the green "Matrix" cypher-code seen in the films.
 
