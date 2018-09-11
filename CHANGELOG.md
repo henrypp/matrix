@@ -1,3 +1,9 @@
+v1.4 (12 September 2018)
+- added settings window
+- changed randomize colors algorithm
+- fixed multi-monitor support
+- fixed bugs
+
 v1.3 (22 November 2016)
 + added config (see matrix.ini)
 + added installation scripts
