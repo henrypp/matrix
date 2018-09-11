@@ -29,7 +29,7 @@ typedef unsigned int GLYPH;
 
 #define SPEED_MIN 1
 #define SPEED_MAX 10
-#define SPEED_DEFAULT 8
+#define SPEED_DEFAULT 6
 
 #define HUE_MIN 1
 #define HUE_MAX 255
@@ -48,33 +48,35 @@ typedef unsigned int GLYPH;
 //
 typedef struct
 {
-	int		state;
-	int		countdown;
+	GLYPH* glyph = nullptr;
 
-	bool	started;
-	int		runlen;
+	int state = 0;
+	int countdown = 0;
 
-	int		blippos;
-	int		bliplen;
+	int runlen = 0;
 
-	int		length;
-	GLYPH	*glyph;
+	int blippos = 0;
+	int bliplen = 0;
+
+	int length = 0;
+
+	bool started = false;
+
 
 } MATRIX_COLUMN;
 
 typedef struct
 {
-	int				width;
-	int				height;
-	int				numcols;
-	int				numrows;
+	MATRIX_COLUMN column[1];
 
 	// bitmap containing glyphs.
-	HDC				hdcBitmap;
-	HBITMAP			hbmBitmap;
+	HDC hdcBitmap = nullptr;
+	HBITMAP hbmBitmap = nullptr;
 
-	MATRIX_COLUMN	column[1];
-
+	int width = 0;
+	int height = 0;
+	int numcols = 0;
+	int numrows = 0;
 } MATRIX;
 
 #endif // __MAIN_H__

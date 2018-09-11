@@ -519,16 +519,10 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 		{
-			DestroyWindow (hwnd);
+			PostMessage (hwnd, WM_CLOSE, 0, 0);
 			return FALSE;
 		}
 
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
 		case WM_MOUSEMOVE:
 		{
 			if (GetParent (hwnd))
@@ -553,6 +547,18 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			ptLast = ptCursor;
 
 			return FALSE;
+		}
+
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+		case WM_MBUTTONDOWN:
+		{
+			if (GetParent (hwnd))
+				return FALSE;
+
+			PostMessage (hwnd, WM_CLOSE, 0, 0);
+
+			break;
 		}
 	}
 
@@ -746,6 +752,36 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						KillTimer (hmatrix, UID);
 						SetTimer (hmatrix, UID, ((SPEED_MAX - SPEED_DEFAULT) + SPEED_MIN) * 10, 0);
 					}
+
+					break;
+				}
+
+				case IDC_SHOW:
+				{
+					RECT rc = {0};
+
+					POINT pt = {0};
+					GetCursorPos (&pt);
+
+					MONITORINFO monitorInfo = {0};
+					monitorInfo.cbSize = sizeof (monitorInfo);
+
+					const HMONITOR hmonitor = MonitorFromPoint (pt, MONITOR_DEFAULTTONEAREST);
+
+					if (hmonitor)
+					{
+						if (GetMonitorInfo (hmonitor, &monitorInfo))
+						{
+							CopyRect (&rc, &monitorInfo.rcMonitor);
+						}
+					}
+					else
+					{
+						rc.right = GetSystemMetrics (SM_CXFULLSCREEN);
+						rc.bottom = GetSystemMetrics (SM_CYFULLSCREEN);
+					}
+
+					MonitorEnumProc (nullptr, nullptr, &rc, 0);
 
 					break;
 				}
