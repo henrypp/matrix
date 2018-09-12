@@ -1,19 +1,39 @@
 @echo off
 
-rem Copy required files...
-@copy /y "%~dp0matrix.scr" "%windir%\system32\matrix.scr"
+set "MATRIX_PATH=%~dp0matrix.scr"
+set "MATRIX_PATH_DEST=%windir%\system32\matrix.scr"
 
-if errorlevel 1 goto error
+if not exist "%MATRIX_PATH%" (
 
-if not exist "%windir%\system32\matrix.ini" (
-	@copy /y "%~dp0matrix.ini" "%windir%\system32\matrix.ini"
+	echo ERROR: "matrix.scr" not found.
+	pause
+
+) else (
+
+	reg add hklm /f>nul 2>&1
+
+	if errorlevel 1 (
+
+		echo ERROR: Please run this script with admin rights...
+		pause
+
+	) else (
+
+		rem Copy required files...
+		copy /y %MATRIX_PATH% %MATRIX_PATH_DEST%
+
+		if not exist "%windir%\system32\matrix.ini" (
+			copy /y "%~dp0matrix.ini" "%windir%\system32\matrix.ini"
+		)
+
+		rem Set as default screensaver...
+
+		if exist %MATRIX_PATH_DEST% (
+			reg add "HKCU\Control Panel\Desktop" /v "SCRNSAVE.EXE" /t REG_SZ /d "%MATRIX_PATH_DEST%" /f
+		)
+
+		rem Open screesaver dialog...
+		rem rundll32.exe shell32.dll,Control_RunDLL desk.cpl,ScreenSaver,@ScreenSaver
+
+	)
 )
-
-rem Open screesaver dialog...
-rundll32.exe shell32.dll,Control_RunDLL desk.cpl,ScreenSaver,@ScreenSaver
-
-exit
-
-:error
-echo ERROR: Please run this script with admin rights...
-pause

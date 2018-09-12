@@ -13,5 +13,6 @@ if exist "%windir%\system32\matrix.ini" (
 exit
 
 :error
+
 echo ERROR: Please run this script with admin rights...
 pause
