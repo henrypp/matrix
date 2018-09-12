@@ -504,13 +504,10 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 		case WM_CLOSE:
 		{
-			//if (VerifyPassword (hwnd))
-			{
-				hmatrix = nullptr;
+			hmatrix = nullptr;
 
-				KillTimer (hwnd, UID);
-				DestroyWindow (hwnd);
-			}
+			KillTimer (hwnd, UID);
+			DestroyWindow (hwnd);
 
 			return FALSE;
 		}
@@ -729,7 +726,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		{
 			switch (LOWORD (wparam))
 			{
-				case IDCANCEL: // process Esc key
+				//case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
 					PostMessage (hwnd, WM_CLOSE, 0, 0);
@@ -888,7 +885,7 @@ INT APIENTRY wWinMain (HINSTANCE hinst, HINSTANCE, LPWSTR cmdline, INT)
 
 		wcex.cbSize = sizeof (wcex);
 		wcex.hInstance = hinst;
-		wcex.style = CS_HREDRAW | CS_VREDRAW;
+		wcex.style = CS_VREDRAW | CS_HREDRAW | CS_SAVEBITS | CS_PARENTDC;
 		wcex.lpszClassName = CLASS_PREVIEW;
 		wcex.lpfnWndProc = &ScreensaverProc;
 		wcex.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
