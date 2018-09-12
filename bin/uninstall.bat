@@ -18,4 +18,8 @@ if errorlevel 1 (
 		del /f /q "%windir%\system32\matrix.ini"
 	)
 
+	if exist "%appdata%\henry++\matrix screensaver" (
+		rmdir /s /q "%appdata%\henry++\matrix screensaver"
+	)
+
 )
