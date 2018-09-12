@@ -28,7 +28,7 @@ typedef unsigned int GLYPH;
 
 #define DENSITY_MIN 5
 #define DENSITY_MAX 50
-#define DENSITY_DEFAULT 32
+#define DENSITY_DEFAULT 30
 
 #define SPEED_MIN 1
 #define SPEED_MAX 10
