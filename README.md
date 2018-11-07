@@ -1,4 +1,5 @@
-## Matrix Screensaver
+Matrix Screensaver [![Github All Releases](https://img.shields.io/github/downloads/henrypp/matrix/total.svg)](https://github.com/henrypp/matrix/releases) [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+=======
 
 ![Matrix Screensaver](https://www.henrypp.org/images/matrix.png?fixcache)
 
