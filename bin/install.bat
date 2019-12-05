@@ -20,10 +20,10 @@ if not exist "%MATRIX_PATH%" (
 	) else (
 
 		rem Copy required files...
-		copy /y %MATRIX_PATH% %MATRIX_PATH_DEST%
+		copy /y "%MATRIX_PATH%" "%MATRIX_PATH_DEST%"
 
 		rem Set as default screensaver...
-		if exist %MATRIX_PATH_DEST% (
+		if exist "%MATRIX_PATH_DEST%" (
 
 			reg add "HKCU\Control Panel\Desktop" /v "ScreenSaveActive" /t REG_SZ /d "1" /f
 			reg add "HKCU\Control Panel\Desktop" /v "SCRNSAVE.EXE" /t REG_SZ /d "%MATRIX_PATH_DEST%" /f
