@@ -1,18 +1,14 @@
 // Matrix Screensaver
 // Copyright (c) J Brown 2003 (catch22.net)
-// Copyright (c) 2011-2018 Henry++
+// Copyright (c) 2011-2021 Henry++
 
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#pragma once
 
-#include <windows.h>
-#include <commctrl.h>
-#include "resource.hpp"
-#include "app.hpp"
+#include "routine.h"
+#include "resource.h"
+#include "app.h"
 
 // config
-typedef unsigned int GLYPH;
-
 #define UID 0xDEADBEEF
 
 #define CLASS_FULLSCREEN APP_NAME_SHORT L"_Fullscreen"
@@ -36,48 +32,50 @@ typedef unsigned int GLYPH;
 
 #define HUE_MIN 1
 #define HUE_MAX 255
-#define HUE_DEFAULT 100
+#define HUE_DEFAULT 85
 
-#define HUE_RANDOM false
+#define HUE_RANDOM FALSE
+#define HUE_RANDOM_SMOOTHTRANSITION TRUE
 
 // constants inferred from matrix.bmp
 #define MAX_INTENSITY 5 // number of intensity levels
 #define GLYPH_WIDTH 14 // width of each glyph (pixels)
 #define GLYPH_HEIGHT 14 // height of each glyph (pixels)
 
+typedef UINT GLYPH;
+typedef PUINT LPGLYPH;
+
 //
 //	The "matrix" is basically an array of these
 //  column structures, positioned side-by-side
 //
-typedef struct
+typedef struct _MATRIX_COLUMN
 {
-	GLYPH* glyph = nullptr;
+	LPGLYPH glyph;
 
-	int state = 0;
-	int countdown = 0;
+	SIZE_T state;
+	SIZE_T countdown;
 
-	int runlen = 0;
+	ULONG blippos;
+	ULONG bliplen;
 
-	int blippos = 0;
-	int bliplen = 0;
+	ULONG length;
 
-	int length = 0;
+	LONG runlen;
 
-	bool started = false;
-} MATRIX_COLUMN;
+	BOOLEAN started;
+} MATRIX_COLUMN, *LPMATRIX_COLUMN;
 
-typedef struct
+typedef struct _MATRIX
 {
-	int width = 0;
-	int height = 0;
-	int numcols = 0;
-	int numrows = 0;
-
 	// bitmap containing glyphs.
-	HDC hdcBitmap = nullptr;
-	HBITMAP hbmBitmap = nullptr;
+	HDC hdcBitmap;
+	HBITMAP hbmBitmap;
+
+	LONG width;
+	LONG height;
+	LONG numcols;
+	LONG numrows;
 
 	MATRIX_COLUMN column[1];
-} MATRIX;
-
-#endif // __MAIN_H__
+} MATRIX, *LPMATRIX;
