@@ -42,8 +42,21 @@
 #define GLYPH_WIDTH 14 // width of each glyph (pixels)
 #define GLYPH_HEIGHT 14 // height of each glyph (pixels)
 
+typedef struct _STATIC_DATA
+{
+	HWND hmatrix;
+	INT amount;
+	INT density;
+	INT speed;
+	INT hue;
+	BOOLEAN is_esc_only;
+	BOOLEAN is_random;
+	BOOLEAN is_smooth;
+	BOOLEAN is_preview;
+} STATIC_DATA, *PSTATIC_DATA;
+
 typedef UINT GLYPH;
-typedef PUINT LPGLYPH;
+typedef PUINT PGLYPH;
 
 //
 //	The "matrix" is basically an array of these
@@ -51,31 +64,30 @@ typedef PUINT LPGLYPH;
 //
 typedef struct _MATRIX_COLUMN
 {
-	LPGLYPH glyph;
+	PGLYPH glyph;
 
-	SIZE_T state;
-	SIZE_T countdown;
+	INT state;
+	INT countdown;
 
-	ULONG blippos;
-	ULONG bliplen;
+	INT blip_pos;
+	INT blip_length;
 
-	ULONG length;
+	INT length;
+	INT run_length;
 
-	LONG runlen;
-
-	BOOLEAN started;
-} MATRIX_COLUMN, *LPMATRIX_COLUMN;
+	BOOLEAN is_started;
+} MATRIX_COLUMN, *PMATRIX_COLUMN;
 
 typedef struct _MATRIX
 {
 	// bitmap containing glyphs.
-	HDC hdcBitmap;
-	HBITMAP hbmBitmap;
+	HDC hdc;
+	HBITMAP hbitmap;
 
-	LONG width;
-	LONG height;
-	LONG numcols;
-	LONG numrows;
+	INT width;
+	INT height;
+	INT numcols;
+	INT numrows;
 
 	MATRIX_COLUMN column[1];
-} MATRIX, *LPMATRIX;
+} MATRIX, *PMATRIX;
