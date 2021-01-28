@@ -2,10 +2,11 @@
 // Copyright (c) J Brown 2003 (catch22.net)
 // Copyright (c) 2011-2021 Henry++
 
-#include <windows.h>
+#include "routine.h"
 
 #include "main.h"
 #include "rapp.h"
+
 #include "resource.h"
 
 STATIC_DATA config;
@@ -179,6 +180,8 @@ VOID ScrollMatrixColumn (PMATRIX_COLUMN column)
 //
 VOID RandomMatrixColumn (PMATRIX_COLUMN column)
 {
+	ULONG rand;
+
 	for (INT i = 1, y = 0; i < 16; i++)
 	{
 		// find a run
@@ -188,10 +191,12 @@ VOID RandomMatrixColumn (PMATRIX_COLUMN column)
 		if (y >= column->length)
 			break;
 
-		column->glyph[y] = (column->glyph[y] & 0xFF00) | (_r_math_rand (0, RND_MAX) % config.amount);
+		rand = _r_math_rand (0, RND_MAX);
+
+		column->glyph[y] = (column->glyph[y] & 0xFF00) | (rand % config.amount);
 		column->glyph[y] |= GLYPH_REDRAW;
 
-		y += _r_math_rand (0, RND_MAX) % 10;
+		y += rand % 10;
 	}
 }
 
