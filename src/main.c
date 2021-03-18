@@ -522,12 +522,12 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 	return DefWindowProc (hwnd, msg, wparam, lparam);
 }
 
-BOOL CALLBACK MonitorEnumProc (HMONITOR hmonitor, HDC hdc, LPRECT lprc, LPARAM lparam)
+BOOL CALLBACK MonitorEnumProc (HMONITOR hmonitor, HDC hdc, PRECT rect, LPARAM lparam)
 {
 	HWND hparent = (HWND)lparam;
 	ULONG style = hparent ? WS_CHILD : WS_POPUP;
 
-	HWND hwnd = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, hparent ? CLASS_PREVIEW : CLASS_FULLSCREEN, APP_NAME, WS_VISIBLE | style, lprc->left, lprc->top, _r_calc_rectwidth (lprc), _r_calc_rectheight (lprc), hparent, NULL, _r_sys_getimagebase (), NULL);
+	HWND hwnd = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, hparent ? CLASS_PREVIEW : CLASS_FULLSCREEN, APP_NAME, WS_VISIBLE | style, rect->left, rect->top, _r_calc_rectwidth (rect), _r_calc_rectheight (rect), hparent, NULL, _r_sys_getimagebase (), NULL);
 
 	if (hwnd)
 		SetWindowPos (hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
@@ -549,10 +549,10 @@ VOID StartScreensaver (HWND hparent)
 	}
 	else
 	{
-		RECT rect = {0};
-		GetClientRect (hparent, &rect);
+		RECT rect;
 
-		MonitorEnumProc (NULL, NULL, &rect, (LPARAM)hparent);
+		if (GetClientRect (hparent, &rect))
+			MonitorEnumProc (NULL, NULL, &rect, (LPARAM)hparent);
 	}
 }
 
@@ -734,15 +734,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDC_SHOW:
 				{
-					RECT rect = {0};
-					POINT pt = {0};
-
-					GetCursorPos (&pt);
+					RECT rect;
 
 					MONITORINFO monitor_info = {0};
 					monitor_info.cbSize = sizeof (monitor_info);
 
-					HMONITOR hmonitor = MonitorFromPoint (pt, MONITOR_DEFAULTTONEAREST);
+					HMONITOR hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
 
 					if (hmonitor)
 					{
@@ -751,8 +748,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 					else
 					{
-						rect.right = _r_dc_getsystemmetrics (hwnd, SM_CXFULLSCREEN);
-						rect.bottom = _r_dc_getsystemmetrics (hwnd, SM_CYFULLSCREEN);
+						SetRect (&rect,
+								 0,
+								 0,
+								 _r_dc_getsystemmetrics (hwnd, SM_CXFULLSCREEN),
+								 _r_dc_getsystemmetrics (hwnd, SM_CYFULLSCREEN)
+						);
 					}
 
 					MonitorEnumProc (NULL, NULL, &rect, 0);
