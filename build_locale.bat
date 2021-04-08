@@ -1,6 +1,6 @@
 @echo off
 
 cd ..\builder
-call build matrix 1.4
+call build_locale matrix
 
 pause
