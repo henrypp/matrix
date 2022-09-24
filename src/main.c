@@ -9,16 +9,16 @@
 
 #include "resource.h"
 
-STATIC_DATA config;
+STATIC_DATA config = {0};
 
 #define RND_MAX INT_MAX
 
 VOID ReadSettings ()
 {
-	config.speed = _r_config_getinteger (L"Speed", SPEED_DEFAULT);
-	config.amount = _r_config_getinteger (L"NumGlyphs", AMOUNT_DEFAULT);
-	config.density = _r_config_getinteger (L"Density", DENSITY_DEFAULT);
-	config.hue = _r_config_getinteger (L"Hue", HUE_DEFAULT);
+	config.speed = _r_config_getlong (L"Speed", SPEED_DEFAULT);
+	config.amount = _r_config_getlong (L"NumGlyphs", AMOUNT_DEFAULT);
+	config.density = _r_config_getlong (L"Density", DENSITY_DEFAULT);
+	config.hue = _r_config_getlong (L"Hue", HUE_DEFAULT);
 
 	config.is_esc_only = _r_config_getboolean (L"IsEscOnly", FALSE);
 
@@ -28,10 +28,10 @@ VOID ReadSettings ()
 
 VOID SaveSettings ()
 {
-	_r_config_setinteger (L"Speed", config.speed);
-	_r_config_setinteger (L"NumGlyphs", config.amount);
-	_r_config_setinteger (L"Density", config.density);
-	_r_config_setinteger (L"Hue", config.hue);
+	_r_config_setlong (L"Speed", config.speed);
+	_r_config_setlong (L"NumGlyphs", config.amount);
+	_r_config_setlong (L"Density", config.density);
+	_r_config_setlong (L"Hue", config.hue);
 
 	_r_config_setboolean (L"IsEscOnly", config.is_esc_only);
 
@@ -39,29 +39,46 @@ VOID SaveSettings ()
 	_r_config_setboolean (L"RandomSmoothTransition", config.is_smooth);
 }
 
-FORCEINLINE COLORREF HSLtoRGB (WORD h, WORD s, WORD l)
+FORCEINLINE COLORREF HSLtoRGB (
+	_In_ WORD h,
+	_In_ WORD s,
+	_In_ WORD l
+)
 {
 	return ColorHLSToRGB (h, l, s);
 }
 
-FORCEINLINE VOID RGBtoHSL (COLORREF clr, PWORD h, PWORD s, PWORD l)
+FORCEINLINE VOID RGBtoHSL (
+	_In_ COLORREF clr,
+	_Out_ PWORD h,
+	_Out_ PWORD s,
+	_Out_ PWORD
+	l)
 {
 	ColorRGBToHLS (clr, h, l, s);
 }
 
-FORCEINLINE GLYPH GlyphIntensity (GLYPH glyph)
+FORCEINLINE GLYPH GlyphIntensity (
+	_In_ GLYPH glyph
+)
 {
 	return ((glyph & 0x7F00) >> 8);
 }
 
-FORCEINLINE GLYPH RandomGlyph (INT intensity)
+FORCEINLINE GLYPH RandomGlyph (
+	_In_ INT intensity
+)
 {
-	return GLYPH_REDRAW | (intensity << 8) | (_r_math_rand (0, RND_MAX) % config.amount);
+	return GLYPH_REDRAW | (intensity << 8) | (_r_math_getrandomrange (0, RND_MAX) % config.amount);
 }
 
-FORCEINLINE GLYPH DarkenGlyph (GLYPH glyph)
+FORCEINLINE GLYPH DarkenGlyph (
+	_In_ GLYPH glyph
+)
 {
-	GLYPH intensity = GlyphIntensity (glyph);
+	GLYPH intensity;
+
+	intensity = GlyphIntensity (glyph);
 
 	if (intensity > 0)
 	{
@@ -71,15 +88,37 @@ FORCEINLINE GLYPH DarkenGlyph (GLYPH glyph)
 	return glyph;
 }
 
-FORCEINLINE VOID DrawGlyph (PMATRIX matrix, HDC hdc, INT xpos, INT ypos, GLYPH glyph)
+FORCEINLINE VOID DrawGlyph (
+	_In_ PMATRIX matrix,
+	_In_ HDC hdc,
+	_In_ INT xpos,
+	_In_ INT ypos,
+	_In_ GLYPH glyph
+)
 {
-	GLYPH intensity = GlyphIntensity (glyph);
-	INT glyph_idx = glyph & 0xff;
+	GLYPH intensity;
+	INT glyph_idx;
 
-	BitBlt (hdc, xpos, ypos, GLYPH_WIDTH, GLYPH_HEIGHT, matrix->hdc, glyph_idx * GLYPH_WIDTH, intensity * GLYPH_HEIGHT, SRCCOPY);
+	intensity = GlyphIntensity (glyph);
+	glyph_idx = glyph & 0xFF;
+
+	BitBlt (
+		hdc,
+		xpos,
+		ypos,
+		GLYPH_WIDTH,
+		GLYPH_HEIGHT,
+		matrix->hdc,
+		glyph_idx * GLYPH_WIDTH,
+		intensity * GLYPH_HEIGHT,
+		SRCCOPY
+	);
 }
 
-FORCEINLINE VOID RedrawBlip (PGLYPH glyph_arr, INT blip_pos)
+FORCEINLINE VOID RedrawBlip (
+	_Inout_ PGLYPH glyph_arr,
+	_In_ INT blip_pos
+)
 {
 	glyph_arr[blip_pos + 0] |= GLYPH_REDRAW;
 	glyph_arr[blip_pos + 1] |= GLYPH_REDRAW;
@@ -87,7 +126,9 @@ FORCEINLINE VOID RedrawBlip (PGLYPH glyph_arr, INT blip_pos)
 	glyph_arr[blip_pos + 9] |= GLYPH_REDRAW;
 }
 
-VOID ScrollMatrixColumn (PMATRIX_COLUMN column)
+VOID ScrollMatrixColumn (
+	_Inout_ PMATRIX_COLUMN column
+)
 {
 	GLYPH last_glyph;
 	GLYPH current_glyph;
@@ -147,11 +188,11 @@ VOID ScrollMatrixColumn (PMATRIX_COLUMN column)
 
 		if (column->state ^= 1)
 		{
-			column->run_length = _r_math_rand (0, RND_MAX) % (3 * density / 2) + DENSITY_MIN;
+			column->run_length = _r_math_getrandomrange (0, RND_MAX) % (3 * density / 2) + DENSITY_MIN;
 		}
 		else
 		{
-			column->run_length = _r_math_rand (0, RND_MAX) % (DENSITY_MAX + 1 - density) + (DENSITY_MIN * 2);
+			column->run_length = _r_math_getrandomrange (0, RND_MAX) % (DENSITY_MAX + 1 - density) + (DENSITY_MIN * 2);
 		}
 	}
 
@@ -166,7 +207,7 @@ VOID ScrollMatrixColumn (PMATRIX_COLUMN column)
 	// length so that the blips never get synched together)
 	if (column->blip_pos >= column->blip_length)
 	{
-		column->blip_length = column->length + (_r_math_rand (0, RND_MAX) % 50);
+		column->blip_length = column->length + (_r_math_getrandomrange (0, RND_MAX) % 50);
 		column->blip_pos = 0;
 	}
 
@@ -178,7 +219,9 @@ VOID ScrollMatrixColumn (PMATRIX_COLUMN column)
 //
 // randomly change a small collection glyphs in a column
 //
-VOID RandomMatrixColumn (PMATRIX_COLUMN column)
+VOID RandomMatrixColumn (
+	_Inout_ PMATRIX_COLUMN column
+)
 {
 	ULONG rand;
 
@@ -191,7 +234,7 @@ VOID RandomMatrixColumn (PMATRIX_COLUMN column)
 		if (y >= column->length)
 			break;
 
-		rand = _r_math_rand (0, RND_MAX);
+		rand = _r_math_getrandomrange (0, RND_MAX);
 
 		column->glyph[y] = (column->glyph[y] & 0xFF00) | (rand % config.amount);
 		column->glyph[y] |= GLYPH_REDRAW;
@@ -200,12 +243,19 @@ VOID RandomMatrixColumn (PMATRIX_COLUMN column)
 	}
 }
 
-VOID RedrawMatrixColumn (PMATRIX_COLUMN column, PMATRIX matrix, HDC hdc, INT xpos)
+VOID RedrawMatrixColumn (
+	_Inout_ PMATRIX_COLUMN column,
+	_In_ PMATRIX matrix,
+	_In_ HDC hdc,
+	_In_ INT xpos
+)
 {
+	GLYPH glyph;
+
 	// loop down the length of the column redrawing only what needs doing
 	for (INT y = 0; y < column->length; y++)
 	{
-		GLYPH glyph = column->glyph[y];
+		glyph = column->glyph[y];
 
 		// does this glyph (character) need to be redrawn?
 		if (glyph & GLYPH_REDRAW)
@@ -221,21 +271,32 @@ VOID RedrawMatrixColumn (PMATRIX_COLUMN column, PMATRIX matrix, HDC hdc, INT xpo
 	}
 }
 
-HBITMAP MakeBitmap (HDC hdc, HINSTANCE hinst, UINT type, INT hue)
+HBITMAP MakeBitmap (
+	_In_ HDC hdc,
+	_In_ HINSTANCE hinst,
+	_In_ UINT type,
+	_In_ INT hue
+)
 {
+	RGBQUAD pal[256] = {0};
 	DIBSECTION dib = {0};
 	LPBITMAPINFOHEADER lpbih;
 	PULONG dest = NULL;
 	PBYTE src;
-
-	RGBQUAD pal[256] = {0};
+	HDC hdc_c;
+	HBITMAP hglyph;
+	HBITMAP hdib;
+	HANDLE hbitmap_old;
+	RGBQUAD rgb;
+	COLORREF clr;
+	WORD h, s, l;
 
 	// load the 8bit image
-	HBITMAP hglyph = LoadImage (hinst, MAKEINTRESOURCE (IDR_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+	hglyph = LoadImage (hinst, MAKEINTRESOURCE (IDR_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
 	// extract the colour table
-	HDC hdc_c = CreateCompatibleDC (hdc);
-	HANDLE hbitmap_old = SelectObject (hdc_c, hglyph);
+	hdc_c = CreateCompatibleDC (hdc);
+	hbitmap_old = SelectObject (hdc_c, hglyph);
 	GetDIBColorTable (hdc_c, 0, RTL_NUMBER_OF (pal), pal);
 	SelectObject (hdc_c, hbitmap_old);
 
@@ -254,17 +315,16 @@ HBITMAP MakeBitmap (HDC hdc, HINSTANCE hinst, UINT type, INT hue)
 	dib.dsBmih.biSizeImage = (dib.dsBmih.biWidth * dib.dsBmih.biHeight) * 4;
 
 	// create a new (blank) 32bit DIB section
-	HBITMAP hDIB = CreateDIBSection (hdc_c, (LPBITMAPINFO)&dib.dsBmih, DIB_RGB_COLORS, &dest, 0, 0);
+	hdib = CreateDIBSection (hdc_c, (LPBITMAPINFO)&dib.dsBmih, DIB_RGB_COLORS, &dest, 0, 0);
 
 	// copy each pixel
 	for (LONG i = 0; i < lpbih->biWidth * lpbih->biHeight; i++)
 	{
 		// convert 8bit palette entry to 32bit colour
-		RGBQUAD rgb = pal[*src++];
-		COLORREF clr = RGB (rgb.rgbRed, rgb.rgbGreen, rgb.rgbBlue);
+		rgb = pal[*src++];
+		clr = RGB (rgb.rgbRed, rgb.rgbGreen, rgb.rgbBlue);
 
 		// convert the RGB colour to H,S,L values
-		WORD h, s, l;
 		RGBtoHSL (clr, &h, &s, &l);
 
 		// create the new colour
@@ -274,10 +334,14 @@ HBITMAP MakeBitmap (HDC hdc, HINSTANCE hinst, UINT type, INT hue)
 	DeleteObject (hglyph);
 	DeleteDC (hdc_c);
 
-	return hDIB;
+	return hdib;
 }
 
-VOID SetMatrixBitmap (HDC hdc, PMATRIX matrix, INT hue)
+VOID SetMatrixBitmap (
+	_In_ HDC hdc,
+	_Inout_ PMATRIX matrix,
+	_In_ INT hue
+)
 {
 	HBITMAP hbitmap;
 	HBITMAP hbitmap_old;
@@ -297,7 +361,10 @@ VOID SetMatrixBitmap (HDC hdc, PMATRIX matrix, INT hue)
 	SelectObject (matrix->hdc, matrix->hbitmap);
 }
 
-VOID DecodeMatrix (HWND hwnd, PMATRIX matrix)
+VOID DecodeMatrix (
+	_In_ HWND hwnd,
+	_In_ PMATRIX matrix
+)
 {
 	PMATRIX_COLUMN column;
 	HDC hdc;
@@ -329,7 +396,7 @@ VOID DecodeMatrix (HWND hwnd, PMATRIX matrix)
 		else
 		{
 			if (_r_sys_gettickcount () % 2)
-				new_hue = (INT)_r_math_rand (HUE_MIN, HUE_MAX);
+				new_hue = (INT)_r_math_getrandomrange (HUE_MIN, HUE_MAX);
 		}
 	}
 	else
@@ -342,11 +409,18 @@ VOID DecodeMatrix (HWND hwnd, PMATRIX matrix)
 	ReleaseDC (hwnd, hdc);
 }
 
-PMATRIX CreateMatrix (INT width, INT height)
+PMATRIX CreateMatrix (
+	_In_ INT width,
+	_In_ INT height
+)
 {
 	PMATRIX matrix;
-	INT numcols = width / GLYPH_WIDTH + 1;
-	INT numrows = height / GLYPH_HEIGHT + 1;
+	HDC hdc;
+	INT numcols;
+	INT numrows;
+
+	numcols = width / GLYPH_WIDTH + 1;
+	numrows = height / GLYPH_HEIGHT + 1;
 
 	matrix = _r_mem_allocatezero (sizeof (MATRIX) + (sizeof (MATRIX_COLUMN) * numcols));
 
@@ -358,14 +432,14 @@ PMATRIX CreateMatrix (INT width, INT height)
 	for (INT x = 0; x < numcols; x++)
 	{
 		matrix->column[x].length = numrows;
-		matrix->column[x].countdown = _r_math_rand (0, RND_MAX) % 100;
-		matrix->column[x].state = _r_math_rand (0, RND_MAX) % 2;
-		matrix->column[x].run_length = _r_math_rand (0, RND_MAX) % 20 + 3;
+		matrix->column[x].countdown = _r_math_getrandomrange (0, RND_MAX) % 100;
+		matrix->column[x].state = _r_math_getrandomrange (0, RND_MAX) % 2;
+		matrix->column[x].run_length = _r_math_getrandomrange (0, RND_MAX) % 20 + 3;
 
 		matrix->column[x].glyph = _r_mem_allocatezero (sizeof (GLYPH) * (numrows + 16));
 	}
 
-	HDC hdc = GetDC (NULL);
+	hdc = GetDC (NULL);
 
 	if (hdc)
 	{
@@ -380,42 +454,54 @@ PMATRIX CreateMatrix (INT width, INT height)
 	return matrix;
 }
 
-VOID DestroyMatrix (PMATRIX matrix)
+VOID DestroyMatrix (
+	_Inout_ PMATRIX *matrix
+)
 {
-	DeleteDC (matrix->hdc);
-	DeleteObject (matrix->hbitmap);
+	PMATRIX old_matrix;
+	PGLYPH glyph;
 
-	for (INT x = 0; x < matrix->numcols; x++)
+	old_matrix = *matrix;
+	*matrix = NULL;
+
+	DeleteDC (old_matrix->hdc);
+	DeleteObject (old_matrix->hbitmap);
+
+	for (INT x = 0; x < old_matrix->numcols; x++)
 	{
-		PGLYPH glyph = matrix->column[x].glyph;
+		glyph = old_matrix->column[x].glyph;
 
 		if (glyph)
 		{
-			matrix->column[x].glyph = NULL;
+			old_matrix->column[x].glyph = NULL;
 
 			_r_mem_free (glyph);
 		}
 	}
 
-	_r_mem_free (matrix);
+	_r_mem_free (old_matrix);
 }
 
-LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK ScreensaverProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	PMATRIX matrix;
 
 	static POINT pt_last = {0};
 	static POINT pt_cursor = {0};
-	static BOOLEAN is_firsttime = TRUE;
+	static BOOLEAN is_savecursor = FALSE;
 
 	switch (msg)
 	{
 		case WM_NCCREATE:
 		{
-			LPCREATESTRUCT pcs = (LPCREATESTRUCT)lparam;
+			LPCREATESTRUCT pcs;
 
-			if (!config.hmatrix)
-				config.hmatrix = hwnd;
+			pcs = (LPCREATESTRUCT)lparam;
 
 			matrix = CreateMatrix (pcs->cx, pcs->cy);
 
@@ -431,6 +517,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 		case WM_NCDESTROY:
 		{
 			KillTimer (hwnd, UID);
+			is_savecursor = FALSE;
 
 			matrix = (PMATRIX)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
@@ -438,7 +525,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
 
-				DestroyMatrix (matrix);
+				DestroyMatrix (&matrix);
 			}
 
 			if (config.is_preview && !GetParent (hwnd))
@@ -451,9 +538,6 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 		case WM_CLOSE:
 		{
-			config.hmatrix = NULL;
-
-			KillTimer (hwnd, UID);
 			DestroyWindow (hwnd);
 
 			return FALSE;
@@ -475,7 +559,8 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			if (wparam != VK_ESCAPE && config.is_esc_only)
 				return FALSE;
 
-			PostMessage (hwnd, WM_CLOSE, 0, 0);
+			DestroyWindow (hwnd);
+
 			return FALSE;
 		}
 
@@ -486,19 +571,20 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			if (GetParent (hwnd) || config.is_esc_only)
 				return FALSE;
 
-			if (is_firsttime)
+			if (!is_savecursor)
 			{
 				GetCursorPos (&pt_last);
-				is_firsttime = FALSE;
+				is_savecursor = TRUE;
 			}
 
 			GetCursorPos (&pt_cursor);
 
-			icon_size = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
+			icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, _r_dc_getwindowdpi (hwnd));
 
 			if (abs (pt_cursor.x - pt_last.x) >= (icon_size / 2) || abs (pt_cursor.y - pt_last.y) >= (icon_size / 2))
 			{
-				PostMessage (hwnd, WM_CLOSE, 0, 0);
+				DestroyWindow (hwnd);
+				return FALSE;
 			}
 
 			pt_last = pt_cursor;
@@ -513,7 +599,7 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			if (GetParent (hwnd) || config.is_esc_only)
 				return FALSE;
 
-			PostMessage (hwnd, WM_CLOSE, 0, 0);
+			DestroyWindow (hwnd);
 
 			break;
 		}
@@ -522,53 +608,79 @@ LRESULT CALLBACK ScreensaverProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 	return DefWindowProc (hwnd, msg, wparam, lparam);
 }
 
-BOOL CALLBACK MonitorEnumProc (HMONITOR hmonitor, HDC hdc, PRECT rect, LPARAM lparam)
+BOOL CALLBACK MonitorEnumProc (
+	_In_opt_ HMONITOR hmonitor,
+	_In_opt_ HDC hdc,
+	_In_ PRECT rect,
+	_In_opt_ LPARAM lparam
+)
 {
-	HWND hparent = (HWND)lparam;
-	ULONG style = hparent ? WS_CHILD : WS_POPUP;
+	HWND hwnd;
+	ULONG style;
 
-	HWND hwnd = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, hparent ? CLASS_PREVIEW : CLASS_FULLSCREEN, APP_NAME, WS_VISIBLE | style, rect->left, rect->top, _r_calc_rectwidth (rect), _r_calc_rectheight (rect), hparent, NULL, _r_sys_getimagebase (), NULL);
+	style = lparam ? WS_CHILD : WS_POPUP;
 
-	if (hwnd)
-		SetWindowPos (hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+	hwnd = CreateWindowEx (
+		WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
+		lparam ? CLASS_PREVIEW : CLASS_FULLSCREEN,
+		_r_app_getname (),
+		WS_VISIBLE | style,
+		rect->left,
+		rect->top,
+		_r_calc_rectwidth (rect),
+		_r_calc_rectheight (rect),
+		(HWND)lparam,
+		NULL,
+		_r_sys_getimagebase (),
+		NULL
+	);
 
 	return TRUE;
 }
 
-VOID StartScreensaver (HWND hparent)
+VOID StartScreensaver (
+	_In_opt_ HWND hparent
+)
 {
 	UINT state = 0;
 
-	if (!hparent)
-	{
-		SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, TRUE, &state, SPIF_SENDWININICHANGE);
-
-		EnumDisplayMonitors (NULL, NULL, &MonitorEnumProc, 0);
-
-		SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, FALSE, &state, SPIF_SENDWININICHANGE);
-	}
-	else
+	if (hparent)
 	{
 		RECT rect;
 
 		if (GetClientRect (hparent, &rect))
 			MonitorEnumProc (NULL, NULL, &rect, (LPARAM)hparent);
 	}
+	else
+	{
+		//SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, TRUE, &state, SPIF_SENDWININICHANGE);
+
+		EnumDisplayMonitors (NULL, NULL, &MonitorEnumProc, 0);
+
+		//SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, FALSE, &state, SPIF_SENDWININICHANGE);
+	}
 }
 
-INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK SettingsProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	switch (msg)
 	{
 		case WM_INITDIALOG:
 		{
-			HWND hpreview = GetDlgItem (hwnd, IDC_PREVIEW);
+			HWND hpreview;
+
+			hpreview = GetDlgItem (hwnd, IDC_PREVIEW);
 
 			// localize window
-			_r_ctrl_settextformat (hwnd, IDC_AMOUNT_RANGE, L"%d-%d", AMOUNT_MIN, AMOUNT_MAX);
-			_r_ctrl_settextformat (hwnd, IDC_DENSITY_RANGE, L"%d-%d", DENSITY_MIN, DENSITY_MAX);
-			_r_ctrl_settextformat (hwnd, IDC_SPEED_RANGE, L"%d-%d", SPEED_MIN, SPEED_MAX);
-			_r_ctrl_settextformat (hwnd, IDC_HUE_RANGE, L"%d-%d", HUE_MIN, HUE_MAX);
+			_r_ctrl_setstringformat (hwnd, IDC_AMOUNT_RANGE, L"%d-%d", AMOUNT_MIN, AMOUNT_MAX);
+			_r_ctrl_setstringformat (hwnd, IDC_DENSITY_RANGE, L"%d-%d", DENSITY_MIN, DENSITY_MAX);
+			_r_ctrl_setstringformat (hwnd, IDC_SPEED_RANGE, L"%d-%d", SPEED_MIN, SPEED_MAX);
+			_r_ctrl_setstringformat (hwnd, IDC_HUE_RANGE, L"%d-%d", HUE_MIN, HUE_MAX);
 
 			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETRANGE32, AMOUNT_MIN, AMOUNT_MAX);
 			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, (LPARAM)config.amount);
@@ -589,22 +701,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
-			_r_ctrl_settextformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _r_app_getwebsite_url (), _r_app_getsources_url ());
-
-			BOOLEAN is_classic = _r_app_isclassicui ();
-
-			_r_wnd_addstyle (hwnd, IDC_SHOW, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (hwnd, IDC_RESET, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (hwnd, IDC_CLOSE, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
+			_r_ctrl_setstringformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _r_app_getwebsite_url (), _r_app_getsources_url ());
 
 			StartScreensaver (hpreview);
 
-			break;
-		}
-
-		case WM_NCCREATE:
-		{
-			_r_wnd_enablenonclientscaling (hwnd);
 			break;
 		}
 
@@ -626,12 +726,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		{
 			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
-			if (
-				ctrl_id == IDC_AMOUNT_RANGE ||
+			if (ctrl_id == IDC_AMOUNT_RANGE ||
 				ctrl_id == IDC_DENSITY_RANGE ||
 				ctrl_id == IDC_SPEED_RANGE ||
-				ctrl_id == IDC_HUE_RANGE
-				)
+				ctrl_id == IDC_HUE_RANGE)
 			{
 				SetBkMode ((HDC)wparam, TRANSPARENT); // background-hack
 				SetTextColor ((HDC)wparam, GetSysColor (COLOR_GRAYTEXT));
@@ -709,7 +807,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDC_RESET:
 				{
-					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION | MB_DEFBUTTON2, APP_NAME, NULL, L"Are you really sure you want to reset all application settings?") != IDYES)
+					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION | MB_DEFBUTTON2, NULL, L"Are you really sure you want to reset all application settings?") != IDYES)
 						break;
 
 					ReadSettings ();
@@ -723,9 +821,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETPOS32, 0, SPEED_DEFAULT);
 					SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, HUE_DEFAULT);
 
-					KillTimer (config.hmatrix, UID);
-					SetTimer (config.hmatrix, UID, ((SPEED_MAX - SPEED_DEFAULT) + SPEED_MIN) * 10, 0);
-
 					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
 					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
@@ -734,30 +829,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDC_SHOW:
 				{
-					RECT rect;
-
-					MONITORINFO monitor_info = {0};
-					monitor_info.cbSize = sizeof (monitor_info);
-
-					HMONITOR hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
-
-					if (hmonitor)
-					{
-						if (GetMonitorInfo (hmonitor, &monitor_info))
-							CopyRect (&rect, &monitor_info.rcMonitor);
-					}
-					else
-					{
-						SetRect (&rect,
-								 0,
-								 0,
-								 _r_dc_getsystemmetrics (hwnd, SM_CXFULLSCREEN),
-								 _r_dc_getsystemmetrics (hwnd, SM_CYFULLSCREEN)
-						);
-					}
-
-					MonitorEnumProc (NULL, NULL, &rect, 0);
-
+					StartScreensaver (NULL);
 					break;
 				}
 
@@ -776,9 +848,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_SPEED_CTRL:
 				{
 					INT new_value = (INT)SendDlgItemMessage (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
-
-					KillTimer (config.hmatrix, UID);
-					SetTimer (config.hmatrix, UID, ((SPEED_MAX - new_value) + SPEED_MIN) * 10, 0);
 
 					config.speed = new_value;
 
@@ -824,16 +893,17 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	return FALSE;
 }
 
-BOOLEAN RegisterClasses (HINSTANCE hinst)
+BOOLEAN RegisterClasses (
+	_In_ HINSTANCE hinst
+)
 {
-	// register window class
 	WNDCLASSEX wcex = {0};
 
 	wcex.cbSize = sizeof (wcex);
 	wcex.hInstance = hinst;
 	wcex.style = CS_VREDRAW | CS_HREDRAW | CS_SAVEBITS | CS_PARENTDC;
 	wcex.lpfnWndProc = &ScreensaverProc;
-	wcex.hbrBackground = CreateSolidBrush (RGB (0, 0, 0));
+	wcex.hbrBackground = GetStockObject (BLACK_BRUSH);
 	wcex.cbWndExtra = sizeof (PMATRIX);
 
 	wcex.lpszClassName = CLASS_PREVIEW;
@@ -841,7 +911,7 @@ BOOLEAN RegisterClasses (HINSTANCE hinst)
 
 	if (!RegisterClassEx (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, GetLastError (), NULL, NULL);
+		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
 		return FALSE;
 	}
 
@@ -850,18 +920,23 @@ BOOLEAN RegisterClasses (HINSTANCE hinst)
 
 	if (!RegisterClassEx (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, GetLastError (), NULL, NULL);
+		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
 		return FALSE;
 	}
 
 	return TRUE;
 }
 
-INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_ LPWSTR cmdline, _In_ INT show_cmd)
+INT APIENTRY wWinMain (
+	_In_ HINSTANCE hinst,
+	_In_opt_ HINSTANCE prev_hinst,
+	_In_ LPWSTR cmdline,
+	_In_ INT show_cmd
+)
 {
+	R_STRINGREF sr;
+	HWND hwnd;
 	MSG msg;
-
-	RtlSecureZeroMemory (&config, sizeof (config));
 
 	if (!_r_app_initialize ())
 		return ERROR_NOT_READY;
@@ -873,30 +948,40 @@ INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_
 	if (!RegisterClasses (hinst))
 		goto CleanupExit;
 
+	_r_obj_initializestringref (&sr, cmdline);
+
 	// parse arguments
-	if (_r_str_compare_length (cmdline, L"/s", 2) == 0)
+	if (_r_str_isstartswith2 (&sr, L"/s", TRUE))
 	{
+		hwnd = NULL;
+
 		StartScreensaver (NULL);
 	}
-	else if (_r_str_compare_length (cmdline, L"/p", 2) == 0)
+	else if (_r_str_isstartswith2 (&sr, L"/p", TRUE))
 	{
-		HWND hctrl = (HWND)_r_str_tolong64 (cmdline + 3);
+		_r_obj_skipstringlength (&sr, 3 * sizeof (WCHAR));
 
-		if (hctrl)
-			StartScreensaver (hctrl);
+		hwnd = (HWND)_r_str_tolong_ptr (&sr);
+
+		if (!hwnd)
+			goto CleanupExit;
+
+		StartScreensaver (hwnd);
 	}
 	else
 	{
 		config.is_preview = TRUE;
 
-		if (!_r_app_createwindow (IDD_SETTINGS, IDI_MAIN, &SettingsProc))
+		hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCE (IDD_SETTINGS), MAKEINTRESOURCE (IDI_MAIN), &SettingsProc);
+
+		if (!hwnd)
 			goto CleanupExit;
 	}
 
+	_r_wnd_message_callback (hwnd, NULL);
+
 	while (GetMessage (&msg, NULL, 0, 0) > 0)
 	{
-		HWND hwnd = _r_app_gethwnd ();
-
 		if (config.is_preview && IsDialogMessage (hwnd, &msg))
 			continue;
 

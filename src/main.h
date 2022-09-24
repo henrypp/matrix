@@ -45,7 +45,6 @@
 
 typedef struct _STATIC_DATA
 {
-	HWND hmatrix;
 	INT amount;
 	INT density;
 	INT speed;
