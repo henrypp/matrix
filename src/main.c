@@ -1,6 +1,6 @@
 // Matrix Screensaver
 // Copyright (c) J Brown 2003 (catch22.net)
-// Copyright (c) 2011-2021 Henry++
+// Copyright (c) 2011-2023 Henry++
 
 #include "routine.h"
 
@@ -52,8 +52,7 @@ FORCEINLINE VOID RGBtoHSL (
 	_In_ COLORREF clr,
 	_Out_ PWORD h,
 	_Out_ PWORD s,
-	_Out_ PWORD
-	l)
+	_Out_ PWORD l)
 {
 	ColorRGBToHLS (clr, h, l, s);
 }
@@ -91,13 +90,13 @@ FORCEINLINE GLYPH DarkenGlyph (
 FORCEINLINE VOID DrawGlyph (
 	_In_ PMATRIX matrix,
 	_In_ HDC hdc,
-	_In_ INT xpos,
-	_In_ INT ypos,
+	_In_ ULONG xpos,
+	_In_ ULONG ypos,
 	_In_ GLYPH glyph
 )
 {
 	GLYPH intensity;
-	INT glyph_idx;
+	ULONG glyph_idx;
 
 	intensity = GlyphIntensity (glyph);
 	glyph_idx = glyph & 0xFF;
@@ -133,6 +132,7 @@ VOID ScrollMatrixColumn (
 	GLYPH last_glyph;
 	GLYPH current_glyph;
 	GLYPH current_glyph_intensity;
+	LONG density;
 
 	// wait until we are allowed to scroll
 	if (!column->is_started)
@@ -151,7 +151,7 @@ VOID ScrollMatrixColumn (
 	// in intensity/darkness. This change signifies the start/end
 	// of a run of glyphs.
 	//
-	for (INT y = 0; y < column->length; y++)
+	for (ULONG_PTR y = 0; y < (ULONG_PTR)column->length; y++)
 	{
 		current_glyph = column->glyph[y];
 
@@ -163,8 +163,10 @@ VOID ScrollMatrixColumn (
 		if (current_glyph_intensity < GlyphIntensity (last_glyph) && current_glyph_intensity == 0)
 		{
 			column->glyph[y] = RandomGlyph (MAX_INTENSITY - 1);
+
 			y += 1;
 		}
+
 		// top-most part of "run". Delete a character off the top by
 		// darkening the glyph until it eventually disappears (turns black). 
 		// this gives the effect that the run as dropped downwards
@@ -184,7 +186,7 @@ VOID ScrollMatrixColumn (
 	// change state from blanks <-> runs when the current run as expired
 	if (--column->run_length <= 0)
 	{
-		INT density = DENSITY_MAX - config.density + DENSITY_MIN;
+		density = DENSITY_MAX - config.density + DENSITY_MIN;
 
 		if (column->state ^= 1)
 		{
@@ -225,7 +227,7 @@ VOID RandomMatrixColumn (
 {
 	ULONG rand;
 
-	for (INT i = 1, y = 0; i < 16; i++)
+	for (ULONG_PTR i = 1, y = 0; i < 16; i++)
 	{
 		// find a run
 		while (y < column->length && GlyphIntensity (column->glyph[y]) < (MAX_INTENSITY - 1))
@@ -247,13 +249,13 @@ VOID RedrawMatrixColumn (
 	_Inout_ PMATRIX_COLUMN column,
 	_In_ PMATRIX matrix,
 	_In_ HDC hdc,
-	_In_ INT xpos
+	_In_ ULONG xpos
 )
 {
 	GLYPH glyph;
 
 	// loop down the length of the column redrawing only what needs doing
-	for (INT y = 0; y < column->length; y++)
+	for (ULONG_PTR y = 0; y < column->length; y++)
 	{
 		glyph = column->glyph[y];
 
@@ -263,7 +265,7 @@ VOID RedrawMatrixColumn (
 			if ((GlyphIntensity (glyph) >= MAX_INTENSITY - 1) && (y == column->blip_pos + 0 || y == column->blip_pos + 1 || y == column->blip_pos + 8 || y == column->blip_pos + 9))
 				glyph |= MAX_INTENSITY << 8;
 
-			DrawGlyph (matrix, hdc, xpos, y * GLYPH_HEIGHT, glyph);
+			DrawGlyph (matrix, hdc, xpos, (ULONG)y * GLYPH_HEIGHT, glyph);
 
 			// clear redraw state
 			column->glyph[y] &= ~GLYPH_REDRAW;
@@ -275,7 +277,7 @@ HBITMAP MakeBitmap (
 	_In_ HDC hdc,
 	_In_ HINSTANCE hinst,
 	_In_ UINT type,
-	_In_ INT hue
+	_In_ LONG hue
 )
 {
 	RGBQUAD pal[256] = {0};
@@ -366,9 +368,10 @@ VOID DecodeMatrix (
 	_In_ PMATRIX matrix
 )
 {
+	static LONG new_hue = 0;
+
 	PMATRIX_COLUMN column;
 	HDC hdc;
-	static INT new_hue = 0;
 
 	hdc = GetDC (hwnd);
 
@@ -378,13 +381,13 @@ VOID DecodeMatrix (
 	if (!new_hue)
 		new_hue = config.hue;
 
-	for (INT x = 0; x < matrix->numcols; x++)
+	for (ULONG_PTR x = 0; x < matrix->numcols; x++)
 	{
 		column = &matrix->column[x];
 
 		RandomMatrixColumn (column);
 		ScrollMatrixColumn (column);
-		RedrawMatrixColumn (column, matrix, hdc, x * GLYPH_WIDTH);
+		RedrawMatrixColumn (column, matrix, hdc, (ULONG)x * GLYPH_WIDTH);
 	}
 
 	if (config.is_random)
@@ -396,7 +399,7 @@ VOID DecodeMatrix (
 		else
 		{
 			if (_r_sys_gettickcount () % 2)
-				new_hue = (INT)_r_math_getrandomrange (HUE_MIN, HUE_MAX);
+				new_hue = _r_math_getrandomrange (HUE_MIN, HUE_MAX);
 		}
 	}
 	else
@@ -410,33 +413,33 @@ VOID DecodeMatrix (
 }
 
 PMATRIX CreateMatrix (
-	_In_ INT width,
-	_In_ INT height
+	_In_ ULONG width,
+	_In_ ULONG height
 )
 {
 	PMATRIX matrix;
 	HDC hdc;
-	INT numcols;
-	INT numrows;
+	ULONG numcols;
+	ULONG numrows;
 
 	numcols = width / GLYPH_WIDTH + 1;
 	numrows = height / GLYPH_HEIGHT + 1;
 
-	matrix = _r_mem_allocatezero (sizeof (MATRIX) + (sizeof (MATRIX_COLUMN) * numcols));
+	matrix = _r_mem_allocate (sizeof (MATRIX) + (sizeof (MATRIX_COLUMN) * numcols));
 
 	matrix->numcols = numcols;
 	matrix->numrows = numrows;
 	matrix->width = width;
 	matrix->height = height;
 
-	for (INT x = 0; x < numcols; x++)
+	for (ULONG x = 0; x < numcols; x++)
 	{
 		matrix->column[x].length = numrows;
 		matrix->column[x].countdown = _r_math_getrandomrange (0, RND_MAX) % 100;
 		matrix->column[x].state = _r_math_getrandomrange (0, RND_MAX) % 2;
 		matrix->column[x].run_length = _r_math_getrandomrange (0, RND_MAX) % 20 + 3;
 
-		matrix->column[x].glyph = _r_mem_allocatezero (sizeof (GLYPH) * (numrows + 16));
+		matrix->column[x].glyph = _r_mem_allocate (sizeof (GLYPH) * (numrows + 16));
 	}
 
 	hdc = GetDC (NULL);
@@ -467,7 +470,7 @@ VOID DestroyMatrix (
 	DeleteDC (old_matrix->hdc);
 	DeleteObject (old_matrix->hbitmap);
 
-	for (INT x = 0; x < old_matrix->numcols; x++)
+	for (ULONG_PTR x = 0; x < old_matrix->numcols; x++)
 	{
 		glyph = old_matrix->column[x].glyph;
 
@@ -489,11 +492,11 @@ LRESULT CALLBACK ScreensaverProc (
 	_In_ LPARAM lparam
 )
 {
-	PMATRIX matrix;
-
 	static POINT pt_last = {0};
 	static POINT pt_cursor = {0};
 	static BOOLEAN is_savecursor = FALSE;
+
+	PMATRIX matrix;
 
 	switch (msg)
 	{
@@ -566,7 +569,7 @@ LRESULT CALLBACK ScreensaverProc (
 
 		case WM_MOUSEMOVE:
 		{
-			INT icon_size;
+			LONG icon_size;
 
 			if (GetParent (hwnd) || config.is_esc_only)
 				return FALSE;
@@ -584,6 +587,7 @@ LRESULT CALLBACK ScreensaverProc (
 			if (abs (pt_cursor.x - pt_last.x) >= (icon_size / 2) || abs (pt_cursor.y - pt_last.y) >= (icon_size / 2))
 			{
 				DestroyWindow (hwnd);
+
 				return FALSE;
 			}
 
@@ -642,22 +646,17 @@ VOID StartScreensaver (
 	_In_opt_ HWND hparent
 )
 {
+	RECT rect;
 	UINT state = 0;
 
 	if (hparent)
 	{
-		RECT rect;
-
 		if (GetClientRect (hparent, &rect))
 			MonitorEnumProc (NULL, NULL, &rect, (LPARAM)hparent);
 	}
 	else
 	{
-		//SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, TRUE, &state, SPIF_SENDWININICHANGE);
-
 		EnumDisplayMonitors (NULL, NULL, &MonitorEnumProc, 0);
-
-		//SystemParametersInfo (SPI_SETSCREENSAVERRUNNING, FALSE, &state, SPIF_SENDWININICHANGE);
 	}
 }
 
@@ -701,7 +700,7 @@ INT_PTR CALLBACK SettingsProc (
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
-			_r_ctrl_setstringformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _r_app_getwebsite_url (), _r_app_getsources_url ());
+			_r_ctrl_setstringformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _r_app_getsources_url (), _r_app_getsources_url ());
 
 			StartScreensaver (hpreview);
 
@@ -862,7 +861,9 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_RANDOMIZECOLORS_CHK:
 				{
-					BOOLEAN is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					BOOLEAN is_enabled;
+
+					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
 
 					_r_ctrl_enable (hwnd, IDC_HUE_CTRL, !is_enabled);
 					_r_ctrl_enable (hwnd, IDC_HUE, !is_enabled);
@@ -875,13 +876,13 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_RANDOMIZESMOOTH_CHK:
 				{
-					config.is_smooth = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					config.is_smooth = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
 					break;
 				}
 
 				case IDC_ISCLOSEONESC_CHK:
 				{
-					config.is_esc_only = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					config.is_esc_only = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
 					break;
 				}
 			}
@@ -912,6 +913,7 @@ BOOLEAN RegisterClasses (
 	if (!RegisterClassEx (&wcex))
 	{
 		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
+
 		return FALSE;
 	}
 
@@ -921,6 +923,7 @@ BOOLEAN RegisterClasses (
 	if (!RegisterClassEx (&wcex))
 	{
 		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
+
 		return FALSE;
 	}
 
@@ -935,10 +938,10 @@ INT APIENTRY wWinMain (
 )
 {
 	R_STRINGREF sr;
-	HWND hwnd;
+	HWND hwnd = NULL;
 	MSG msg;
 
-	if (!_r_app_initialize ())
+	if (!_r_app_initialize (NULL))
 		return ERROR_NOT_READY;
 
 	// read settings
@@ -953,8 +956,6 @@ INT APIENTRY wWinMain (
 	// parse arguments
 	if (_r_str_isstartswith2 (&sr, L"/s", TRUE))
 	{
-		hwnd = NULL;
-
 		StartScreensaver (NULL);
 	}
 	else if (_r_str_isstartswith2 (&sr, L"/p", TRUE))
@@ -978,11 +979,12 @@ INT APIENTRY wWinMain (
 			goto CleanupExit;
 	}
 
-	_r_wnd_message_callback (hwnd, NULL);
+	if (hwnd)
+		_r_wnd_message_callback (hwnd, NULL);
 
 	while (GetMessage (&msg, NULL, 0, 0) > 0)
 	{
-		if (config.is_preview && IsDialogMessage (hwnd, &msg))
+		if (config.is_preview && hwnd && IsDialogMessage (hwnd, &msg))
 			continue;
 
 		TranslateMessage (&msg);

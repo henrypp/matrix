@@ -45,18 +45,18 @@
 
 typedef struct _STATIC_DATA
 {
-	INT amount;
-	INT density;
-	INT speed;
-	INT hue;
+	LONG amount;
+	LONG density;
+	LONG speed;
+	LONG hue;
 	BOOLEAN is_esc_only;
 	BOOLEAN is_random;
 	BOOLEAN is_smooth;
 	BOOLEAN is_preview;
 } STATIC_DATA, *PSTATIC_DATA;
 
-typedef UINT GLYPH;
-typedef PUINT PGLYPH;
+typedef ULONG GLYPH;
+typedef PULONG PGLYPH;
 
 //
 //	The "matrix" is basically an array of these
@@ -66,14 +66,14 @@ typedef struct _MATRIX_COLUMN
 {
 	PGLYPH glyph;
 
-	INT state;
-	INT countdown;
+	LONG state;
+	LONG countdown;
 
-	INT blip_pos;
-	INT blip_length;
+	ULONG blip_pos;
+	ULONG blip_length;
 
-	INT length;
-	INT run_length;
+	ULONG length;
+	ULONG run_length;
 
 	BOOLEAN is_started;
 } MATRIX_COLUMN, *PMATRIX_COLUMN;
@@ -84,10 +84,10 @@ typedef struct _MATRIX
 	HDC hdc;
 	HBITMAP hbitmap;
 
-	INT width;
-	INT height;
-	INT numcols;
-	INT numrows;
+	ULONG width;
+	ULONG height;
+	ULONG numcols;
+	ULONG numrows;
 
 	MATRIX_COLUMN column[1];
 } MATRIX, *PMATRIX;
