@@ -31,8 +31,7 @@ if not exist "%MATRIX_PATH%" (
 		)
 
 		rem Open screesaver dialog...
-		rem rundll32.exe shell32.dll,Control_RunDLL desk.cpl,ScreenSaver,@ScreenSaver
-
+		rundll32.exe shell32.dll,Control_RunDLL desk.cpl,ScreenSaver,@ScreenSaver
 	)
 
 )
