@@ -52,7 +52,8 @@ FORCEINLINE VOID RGBtoHSL (
 	_In_ COLORREF clr,
 	_Out_ PWORD h,
 	_Out_ PWORD s,
-	_Out_ PWORD l)
+	_Out_ PWORD l
+)
 {
 	ColorRGBToHLS (clr, h, l, s);
 }
@@ -80,9 +81,7 @@ FORCEINLINE GLYPH DarkenGlyph (
 	intensity = GlyphIntensity (glyph);
 
 	if (intensity > 0)
-	{
 		return GLYPH_REDRAW | ((intensity - 1) << 8) | (glyph & 0x00FF);
-	}
 
 	return glyph;
 }
@@ -299,6 +298,7 @@ HBITMAP MakeBitmap (
 	// extract the colour table
 	hdc_c = CreateCompatibleDC (hdc);
 	hbitmap_old = SelectObject (hdc_c, hglyph);
+
 	GetDIBColorTable (hdc_c, 0, RTL_NUMBER_OF (pal), pal);
 	SelectObject (hdc_c, hbitmap_old);
 
@@ -577,6 +577,7 @@ LRESULT CALLBACK ScreensaverProc (
 			if (!is_savecursor)
 			{
 				GetCursorPos (&pt_last);
+
 				is_savecursor = TRUE;
 			}
 
@@ -700,7 +701,7 @@ INT_PTR CALLBACK SettingsProc (
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
 			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
-			_r_ctrl_setstringformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Website</a> | <a href=\"%s\">Github</a>", _r_app_getsources_url (), _r_app_getsources_url ());
+			_r_ctrl_setstringformat (hwnd, IDC_ABOUT, L"<a href=\"%s\">Github</a>", _r_app_getwebsite_url ());
 
 			StartScreensaver (hpreview);
 
@@ -716,6 +717,7 @@ INT_PTR CALLBACK SettingsProc (
 		case WM_DESTROY:
 		{
 			SaveSettings ();
+
 			PostQuitMessage (0);
 
 			break;
@@ -725,10 +727,7 @@ INT_PTR CALLBACK SettingsProc (
 		{
 			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
-			if (ctrl_id == IDC_AMOUNT_RANGE ||
-				ctrl_id == IDC_DENSITY_RANGE ||
-				ctrl_id == IDC_SPEED_RANGE ||
-				ctrl_id == IDC_HUE_RANGE)
+			if (ctrl_id == IDC_AMOUNT_RANGE || ctrl_id == IDC_DENSITY_RANGE || ctrl_id == IDC_SPEED_RANGE || ctrl_id == IDC_HUE_RANGE)
 			{
 				SetBkMode ((HDC)wparam, TRANSPARENT); // background-hack
 				SetTextColor ((HDC)wparam, GetSysColor (COLOR_GRAYTEXT));
@@ -782,7 +781,7 @@ INT_PTR CALLBACK SettingsProc (
 					PNMLINK nmlink = (PNMLINK)lparam;
 
 					if (!_r_str_isempty (nmlink->item.szUrl))
-						ShellExecute (hwnd, NULL, nmlink->item.szUrl, NULL, NULL, SW_SHOWDEFAULT);
+						_r_shell_opendefault (nmlink->item.szUrl);
 
 					break;
 				}
@@ -834,19 +833,21 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_AMOUNT_CTRL:
 				{
-					config.amount = (INT)SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_GETPOS32, 0, 0);
+					config.amount = (LONG)SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_GETPOS32, 0, 0);
 					break;
 				}
 
 				case IDC_DENSITY_CTRL:
 				{
-					config.density = (INT)SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_GETPOS32, 0, 0);
+					config.density = (LONG)SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_GETPOS32, 0, 0);
 					break;
 				}
 
 				case IDC_SPEED_CTRL:
 				{
-					INT new_value = (INT)SendDlgItemMessage (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
+					LONG new_value;
+
+					new_value = (LONG)SendDlgItemMessage (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
 
 					config.speed = new_value;
 
@@ -855,7 +856,12 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_HUE_CTRL:
 				{
-					config.hue = (INT)SendDlgItemMessage (hwnd, IDC_HUE, UDM_GETPOS32, 0, 0);
+					LONG new_value;
+
+					new_value = (LONG)SendDlgItemMessage (hwnd, IDC_HUE, UDM_GETPOS32, 0, 0);
+
+					config.hue = new_value;
+
 					break;
 				}
 
