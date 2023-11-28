@@ -254,20 +254,20 @@ VOID RedrawMatrixColumn (
 	GLYPH glyph;
 
 	// loop down the length of the column redrawing only what needs doing
-	for (ULONG_PTR y = 0; y < column->length; y++)
+	for (ULONG_PTR i = 0; i < column->length; i++)
 	{
-		glyph = column->glyph[y];
+		glyph = column->glyph[i];
 
 		// does this glyph (character) need to be redrawn?
 		if (glyph & GLYPH_REDRAW)
 		{
-			if ((GlyphIntensity (glyph) >= MAX_INTENSITY - 1) && (y == column->blip_pos + 0 || y == column->blip_pos + 1 || y == column->blip_pos + 8 || y == column->blip_pos + 9))
+			if ((GlyphIntensity (glyph) >= MAX_INTENSITY - 1) && (i == column->blip_pos + 0 || i == column->blip_pos + 1 || i == column->blip_pos + 8 || i == column->blip_pos + 9))
 				glyph |= MAX_INTENSITY << 8;
 
-			DrawGlyph (matrix, hdc, xpos, (ULONG)y * GLYPH_HEIGHT, glyph);
+			DrawGlyph (matrix, hdc, xpos, (ULONG)i * GLYPH_HEIGHT, glyph);
 
 			// clear redraw state
-			column->glyph[y] &= ~GLYPH_REDRAW;
+			column->glyph[i] &= ~GLYPH_REDRAW;
 		}
 	}
 }
@@ -918,7 +918,7 @@ BOOLEAN RegisterClasses (
 
 	if (!RegisterClassEx (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
+		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, NULL, NULL);
 
 		return FALSE;
 	}
@@ -928,7 +928,7 @@ BOOLEAN RegisterClasses (
 
 	if (!RegisterClassEx (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, GetLastError (), NULL);
+		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, NULL, NULL);
 
 		return FALSE;
 	}
