@@ -293,7 +293,7 @@ HBITMAP MakeBitmap (
 	WORD h, s, l;
 
 	// load the 8bit image
-	hglyph = LoadImage (hinst, MAKEINTRESOURCE (IDR_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+	hglyph = LoadImageW (hinst, MAKEINTRESOURCE (IDR_GLYPH), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
 	// extract the colour table
 	hdc_c = CreateCompatibleDC (hdc);
@@ -302,7 +302,7 @@ HBITMAP MakeBitmap (
 	GetDIBColorTable (hdc_c, 0, RTL_NUMBER_OF (pal), pal);
 	SelectObject (hdc_c, hbitmap_old);
 
-	GetObject (hglyph, sizeof (dib), &dib);
+	GetObjectW (hglyph, sizeof (dib), &dib);
 
 	src = dib.dsBm.bmBits;
 	lpbih = &dib.dsBmih;
@@ -511,7 +511,7 @@ LRESULT CALLBACK ScreensaverProc (
 			if (!matrix)
 				return FALSE;
 
-			SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)matrix);
+			SetWindowLongPtrW (hwnd, GWLP_USERDATA, (LONG_PTR)matrix);
 			SetTimer (hwnd, UID, ((SPEED_MAX - config.speed) + SPEED_MIN) * 10, 0);
 
 			return TRUE;
@@ -526,7 +526,7 @@ LRESULT CALLBACK ScreensaverProc (
 
 			if (matrix)
 			{
-				SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
+				SetWindowLongPtrW (hwnd, GWLP_USERDATA, 0);
 
 				DestroyMatrix (&matrix);
 			}
@@ -682,17 +682,17 @@ INT_PTR CALLBACK SettingsProc (
 			_r_ctrl_setstringformat (hwnd, IDC_SPEED_RANGE, L"%d-%d", SPEED_MIN, SPEED_MAX);
 			_r_ctrl_setstringformat (hwnd, IDC_HUE_RANGE, L"%d-%d", HUE_MIN, HUE_MAX);
 
-			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETRANGE32, AMOUNT_MIN, AMOUNT_MAX);
-			SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, (LPARAM)config.amount);
+			SendDlgItemMessageW (hwnd, IDC_AMOUNT, UDM_SETRANGE32, AMOUNT_MIN, AMOUNT_MAX);
+			SendDlgItemMessageW (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, (LPARAM)config.amount);
 
-			SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETRANGE32, DENSITY_MIN, DENSITY_MAX);
-			SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, (LPARAM)config.density);
+			SendDlgItemMessageW (hwnd, IDC_DENSITY, UDM_SETRANGE32, DENSITY_MIN, DENSITY_MAX);
+			SendDlgItemMessageW (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, (LPARAM)config.density);
 
-			SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETRANGE32, SPEED_MIN, SPEED_MAX);
-			SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETPOS32, 0, (LPARAM)config.speed);
+			SendDlgItemMessageW (hwnd, IDC_SPEED, UDM_SETRANGE32, SPEED_MIN, SPEED_MAX);
+			SendDlgItemMessageW (hwnd, IDC_SPEED, UDM_SETPOS32, 0, (LPARAM)config.speed);
 
-			SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETRANGE32, HUE_MIN, HUE_MAX);
-			SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, (LPARAM)config.hue);
+			SendDlgItemMessageW (hwnd, IDC_HUE, UDM_SETRANGE32, HUE_MIN, HUE_MAX);
+			SendDlgItemMessageW (hwnd, IDC_HUE, UDM_SETPOS32, 0, (LPARAM)config.hue);
 
 			CheckDlgButton (hwnd, IDC_RANDOMIZECOLORS_CHK, config.is_random);
 			CheckDlgButton (hwnd, IDC_RANDOMIZESMOOTH_CHK, config.is_smooth);
@@ -750,7 +750,7 @@ INT_PTR CALLBACK SettingsProc (
 
 		case WM_LBUTTONDOWN:
 		{
-			PostMessage (hwnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
+			PostMessageW (hwnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
 			break;
 		}
 
@@ -761,7 +761,7 @@ INT_PTR CALLBACK SettingsProc (
 			LONG_PTR exstyle = GetWindowLongPtr (hwnd, GWL_EXSTYLE);
 
 			if ((exstyle & WS_EX_LAYERED) == 0)
-				SetWindowLongPtr (hwnd, GWL_EXSTYLE, exstyle | WS_EX_LAYERED);
+				SetWindowLongPtrW (hwnd, GWL_EXSTYLE, exstyle | WS_EX_LAYERED);
 
 			SetLayeredWindowAttributes (hwnd, 0, (msg == WM_ENTERSIZEMOVE) ? 100 : 255, LWA_ALPHA);
 			SetCursor (LoadCursor (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW));
@@ -799,7 +799,7 @@ INT_PTR CALLBACK SettingsProc (
 				//case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
-					PostMessage (hwnd, WM_CLOSE, 0, 0);
+					PostMessageW (hwnd, WM_CLOSE, 0, 0);
 					break;
 				}
 
@@ -814,13 +814,13 @@ INT_PTR CALLBACK SettingsProc (
 					CheckDlgButton (hwnd, IDC_RANDOMIZESMOOTH_CHK, config.is_smooth ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_ISCLOSEONESC_CHK, config.is_esc_only ? BST_CHECKED : BST_UNCHECKED);
 
-					SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, AMOUNT_DEFAULT);
-					SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, DENSITY_DEFAULT);
-					SendDlgItemMessage (hwnd, IDC_SPEED, UDM_SETPOS32, 0, SPEED_DEFAULT);
-					SendDlgItemMessage (hwnd, IDC_HUE, UDM_SETPOS32, 0, HUE_DEFAULT);
+					SendDlgItemMessageW (hwnd, IDC_AMOUNT, UDM_SETPOS32, 0, AMOUNT_DEFAULT);
+					SendDlgItemMessageW (hwnd, IDC_DENSITY, UDM_SETPOS32, 0, DENSITY_DEFAULT);
+					SendDlgItemMessageW (hwnd, IDC_SPEED, UDM_SETPOS32, 0, SPEED_DEFAULT);
+					SendDlgItemMessageW (hwnd, IDC_HUE, UDM_SETPOS32, 0, HUE_DEFAULT);
 
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_RANDOMIZECOLORS_CHK, 0), 0);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ISCLOSEONESC_CHK, 0), 0);
 
 					break;
 				}
@@ -833,13 +833,13 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_AMOUNT_CTRL:
 				{
-					config.amount = (LONG)SendDlgItemMessage (hwnd, IDC_AMOUNT, UDM_GETPOS32, 0, 0);
+					config.amount = (LONG)SendDlgItemMessageW (hwnd, IDC_AMOUNT, UDM_GETPOS32, 0, 0);
 					break;
 				}
 
 				case IDC_DENSITY_CTRL:
 				{
-					config.density = (LONG)SendDlgItemMessage (hwnd, IDC_DENSITY, UDM_GETPOS32, 0, 0);
+					config.density = (LONG)SendDlgItemMessageW (hwnd, IDC_DENSITY, UDM_GETPOS32, 0, 0);
 					break;
 				}
 
@@ -847,7 +847,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					LONG new_value;
 
-					new_value = (LONG)SendDlgItemMessage (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
+					new_value = (LONG)SendDlgItemMessageW (hwnd, IDC_SPEED, UDM_GETPOS32, 0, 0);
 
 					config.speed = new_value;
 
@@ -858,7 +858,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					LONG new_value;
 
-					new_value = (LONG)SendDlgItemMessage (hwnd, IDC_HUE, UDM_GETPOS32, 0, 0);
+					new_value = (LONG)SendDlgItemMessageW (hwnd, IDC_HUE, UDM_GETPOS32, 0, 0);
 
 					config.hue = new_value;
 
@@ -914,21 +914,21 @@ BOOLEAN RegisterClasses (
 	wcex.cbWndExtra = sizeof (PMATRIX);
 
 	wcex.lpszClassName = CLASS_PREVIEW;
-	wcex.hCursor = LoadCursor (NULL, IDC_ARROW);
+	wcex.hCursor = LoadCursorW (NULL, IDC_ARROW);
 
-	if (!RegisterClassEx (&wcex))
+	if (!RegisterClassExW (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, NULL, NULL);
+		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, TRUE);
 
 		return FALSE;
 	}
 
 	wcex.lpszClassName = CLASS_FULLSCREEN;
-	wcex.hCursor = LoadCursor (hinst, MAKEINTRESOURCE (IDR_CURSOR));
+	wcex.hCursor = LoadCursorW (hinst, MAKEINTRESOURCE (IDR_CURSOR));
 
-	if (!RegisterClassEx (&wcex))
+	if (!RegisterClassExW (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, NULL, NULL);
+		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, TRUE);
 
 		return FALSE;
 	}
@@ -988,19 +988,19 @@ INT APIENTRY wWinMain (
 	if (hwnd)
 		_r_wnd_message_callback (hwnd, NULL);
 
-	while (GetMessage (&msg, NULL, 0, 0) > 0)
+	while (GetMessageW (&msg, NULL, 0, 0) > 0)
 	{
-		if (config.is_preview && hwnd && IsDialogMessage (hwnd, &msg))
+		if (config.is_preview && hwnd && IsDialogMessageW (hwnd, &msg))
 			continue;
 
 		TranslateMessage (&msg);
-		DispatchMessage (&msg);
+		DispatchMessageW (&msg);
 	}
 
 CleanupExit:
 
-	UnregisterClass (CLASS_PREVIEW, hinst);
-	UnregisterClass (CLASS_FULLSCREEN, hinst);
+	UnregisterClassW (CLASS_PREVIEW, hinst);
+	UnregisterClassW (CLASS_FULLSCREEN, hinst);
 
 	return ERROR_SUCCESS;
 }
