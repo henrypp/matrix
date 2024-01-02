@@ -11,7 +11,7 @@
 -------
 
 <p align="center">
-	<img src="https://www.henrypp.org/images/matrix.png?im" />
+	<img src="/images/matrix.png?im" />
 </p>
 
 ### Description:
@@ -35,8 +35,8 @@ Binaries have GPG signature simplewall.exe.sig in application folder.
 - Public key: [pubkey.asc](https://raw.githubusercontent.com/henrypp/builder/master/pubkey.asc) ([pgpkeys.eu](https://pgpkeys.eu/pks/lookup?op=index&fingerprint=on&search=0x5635B5FD))
 - Key ID: 0x5635B5FD
 - Fingerprint: D985 2361 1524 AB29 BE73 30AC 2881 20A7 5635 B5FD
-
-Website: [www.henrypp.org](https://www.henrypp.org)<br />
-Support: support@henrypp.org<br />
+---
+- Website: [github.com/henrypp](https://github.com/henrypp)
+- Support: sforce5@mail.ru
 <br />
-(c) 2011-2021 Henry++
+(c) 2011-2024 Henry++
