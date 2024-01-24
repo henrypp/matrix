@@ -7,4 +7,4 @@ Originally written by J Brown 2003.
 Website: www.henrypp.org
 Support: support@henrypp.org
 
-(c) 2011-2021 Henry++
+(c) 2011-2024 Henry++
