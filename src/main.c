@@ -918,7 +918,7 @@ BOOLEAN RegisterClasses (
 
 	if (!RegisterClassExW (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, TRUE);
+		_r_show_errormessage (NULL, NULL, NtLastError (), NULL, FALSE);
 
 		return FALSE;
 	}
@@ -928,7 +928,7 @@ BOOLEAN RegisterClasses (
 
 	if (!RegisterClassExW (&wcex))
 	{
-		_r_show_errormessage (NULL, NULL, PebLastError (), NULL, TRUE);
+		_r_show_errormessage (NULL, NULL, NtLastError (), NULL, FALSE);
 
 		return FALSE;
 	}
