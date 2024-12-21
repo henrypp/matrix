@@ -966,7 +966,7 @@ INT APIENTRY wWinMain (
 	}
 	else if (_r_str_isstartswith2 (&sr, L"/p", TRUE))
 	{
-		_r_obj_skipstringlength (&sr, 3 * sizeof (WCHAR));
+		_r_str_skiplength (&sr, 3 * sizeof (WCHAR));
 
 		hwnd = (HWND)_r_str_tolong_ptr (&sr);
 
