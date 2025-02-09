@@ -1,6 +1,6 @@
 // Matrix Screensaver
 // Copyright (c) J Brown 2003 (catch22.net)
-// Copyright (c) 2011-2023 Henry++
+// Copyright (c) 2011-2025 Henry++
 
 #include "routine.h"
 
@@ -15,28 +15,28 @@ STATIC_DATA config = {0};
 
 VOID ReadSettings ()
 {
-	config.speed = _r_config_getlong (L"Speed", SPEED_DEFAULT);
-	config.amount = _r_config_getlong (L"NumGlyphs", AMOUNT_DEFAULT);
-	config.density = _r_config_getlong (L"Density", DENSITY_DEFAULT);
-	config.hue = _r_config_getlong (L"Hue", HUE_DEFAULT);
+	config.speed = _r_config_getlong (L"Speed", SPEED_DEFAULT, NULL);
+	config.amount = _r_config_getlong (L"NumGlyphs", AMOUNT_DEFAULT, NULL);
+	config.density = _r_config_getlong (L"Density", DENSITY_DEFAULT, NULL);
+	config.hue = _r_config_getlong (L"Hue", HUE_DEFAULT, NULL);
 
-	config.is_esc_only = _r_config_getboolean (L"IsEscOnly", FALSE);
+	config.is_esc_only = _r_config_getboolean (L"IsEscOnly", FALSE, NULL);
 
-	config.is_random = _r_config_getboolean (L"Random", HUE_RANDOM);
-	config.is_smooth = _r_config_getboolean (L"RandomSmoothTransition", HUE_RANDOM_SMOOTHTRANSITION);
+	config.is_random = _r_config_getboolean (L"Random", HUE_RANDOM, NULL);
+	config.is_smooth = _r_config_getboolean (L"RandomSmoothTransition", HUE_RANDOM_SMOOTHTRANSITION, NULL);
 }
 
 VOID SaveSettings ()
 {
-	_r_config_setlong (L"Speed", config.speed);
-	_r_config_setlong (L"NumGlyphs", config.amount);
-	_r_config_setlong (L"Density", config.density);
-	_r_config_setlong (L"Hue", config.hue);
+	_r_config_setlong (L"Speed", config.speed, NULL);
+	_r_config_setlong (L"NumGlyphs", config.amount, NULL);
+	_r_config_setlong (L"Density", config.density, NULL);
+	_r_config_setlong (L"Hue", config.hue, NULL);
 
-	_r_config_setboolean (L"IsEscOnly", config.is_esc_only);
+	_r_config_setboolean (L"IsEscOnly", config.is_esc_only, NULL);
 
-	_r_config_setboolean (L"Random", config.is_random);
-	_r_config_setboolean (L"RandomSmoothTransition", config.is_smooth);
+	_r_config_setboolean (L"Random", config.is_random, NULL);
+	_r_config_setboolean (L"RandomSmoothTransition", config.is_smooth, NULL);
 }
 
 FORCEINLINE COLORREF HSLtoRGB (

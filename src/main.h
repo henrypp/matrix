@@ -1,6 +1,6 @@
 // Matrix Screensaver
 // Copyright (c) J Brown 2003 (catch22.net)
-// Copyright (c) 2011-2023 Henry++
+// Copyright (c) 2011-2025 Henry++
 
 #pragma once
 
