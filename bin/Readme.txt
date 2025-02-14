@@ -4,7 +4,7 @@ The Matrix ScreenSaver is a small, fast and elegant Windows version of the green
 
 Originally written by J Brown 2003.
 
-Website: www.henrypp.org
-Support: support@henrypp.org
+Website: https://github.com/henrypp
+Support: sforce5@mail.ru
 
-(c) 2011-2024 Henry++
+(c) 2011-2025 Henry++
