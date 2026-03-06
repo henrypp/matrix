@@ -205,7 +205,8 @@ VOID ScrollMatrixColumn (
 				y++;
 		}
 
-		last_glyph = column->glyph[y];
+		if (y < (ULONG_PTR)column->length)
+			last_glyph = column->glyph[y];
 	}
 
         // change state from blanks <-> runs when the current run has expired
