@@ -771,6 +771,7 @@ INT_PTR CALLBACK SettingsProc (
 		case WM_DESTROY:
 		{
 			SaveSettings ();
+			config.is_preview = FALSE;
 
 			PostQuitMessage (0);
 
