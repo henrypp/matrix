@@ -33,10 +33,10 @@ VOID ReadSettings ()
         LONG density;
         LONG hue;
 
-        speed = _r_config_getlong (L"Speed", SPEED_DEFAULT, NULL);
-        amount = _r_config_getlong (L"NumGlyphs", AMOUNT_DEFAULT, NULL);
-        density = _r_config_getlong (L"Density", DENSITY_DEFAULT, NULL);
-        hue = _r_config_getlong (L"Hue", HUE_DEFAULT, NULL);
+        speed = _r_config_getlong_ex (L"Speed", SPEED_DEFAULT, NULL);
+        amount = _r_config_getlong_ex (L"NumGlyphs", AMOUNT_DEFAULT, NULL);
+        density = _r_config_getlong_ex (L"Density", DENSITY_DEFAULT, NULL);
+        hue = _r_config_getlong_ex (L"Hue", HUE_DEFAULT, NULL);
 
         config.speed = ClampLong (speed, SPEED_MIN, SPEED_MAX);
         config.amount = ClampLong (amount, AMOUNT_MIN, AMOUNT_MAX);
@@ -46,23 +46,23 @@ VOID ReadSettings ()
         if (config.amount <= 0)
                 config.amount = AMOUNT_DEFAULT;
 
-        config.is_esc_only = _r_config_getboolean (L"IsEscOnly", FALSE, NULL);
+        config.is_esc_only = _r_config_getboolean_ex (L"IsEscOnly", FALSE, NULL);
 
-        config.is_random = _r_config_getboolean (L"Random", HUE_RANDOM, NULL);
-        config.is_smooth = _r_config_getboolean (L"RandomSmoothTransition", HUE_RANDOM_SMOOTHTRANSITION, NULL);
+        config.is_random = _r_config_getboolean_ex (L"Random", HUE_RANDOM, NULL);
+        config.is_smooth = _r_config_getboolean_ex (L"RandomSmoothTransition", HUE_RANDOM_SMOOTHTRANSITION, NULL);
 }
 
 VOID SaveSettings ()
 {
-	_r_config_setlong (L"Speed", config.speed, NULL);
-	_r_config_setlong (L"NumGlyphs", config.amount, NULL);
-	_r_config_setlong (L"Density", config.density, NULL);
-	_r_config_setlong (L"Hue", config.hue, NULL);
+	_r_config_setlong_ex (L"Speed", config.speed, NULL);
+	_r_config_setlong_ex (L"NumGlyphs", config.amount, NULL);
+	_r_config_setlong_ex (L"Density", config.density, NULL);
+	_r_config_setlong_ex (L"Hue", config.hue, NULL);
 
-	_r_config_setboolean (L"IsEscOnly", config.is_esc_only, NULL);
+	_r_config_setboolean_ex (L"IsEscOnly", config.is_esc_only, NULL);
 
-	_r_config_setboolean (L"Random", config.is_random, NULL);
-	_r_config_setboolean (L"RandomSmoothTransition", config.is_smooth, NULL);
+	_r_config_setboolean_ex (L"Random", config.is_random, NULL);
+	_r_config_setboolean_ex (L"RandomSmoothTransition", config.is_smooth, NULL);
 }
 
 FORCEINLINE COLORREF HSLtoRGB (
