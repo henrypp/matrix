@@ -1041,7 +1041,10 @@ INT APIENTRY wWinMain (
 	}
 
 	if (hwnd)
+	{
 		_r_wnd_message_callback (hwnd, NULL);
+		goto CleanupExit;
+	}
 
 	while (GetMessageW (&msg, NULL, 0, 0) > 0)
 	{
