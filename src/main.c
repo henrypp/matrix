@@ -1,6 +1,6 @@
 // Matrix Screensaver
 // Copyright (c) J Brown 2003 (catch22.net)
-// Copyright (c) 2011-2025 Henry++
+// Copyright (c) 2011-2026 Henry++
 
 #include "routine.h"
 
@@ -168,7 +168,7 @@ VOID ScrollMatrixColumn (
 
 		// top-most part of "run". Delete a character off the top by
 		// darkening the glyph until it eventually disappears (turns black). 
-		// this gives the effect that the run as dropped downwards
+		// this gives the effect that the run has dropped downwards
 		else if (current_glyph_intensity > GlyphIntensity (last_glyph))
 		{
 			column->glyph[y] = DarkenGlyph (current_glyph);
@@ -182,7 +182,7 @@ VOID ScrollMatrixColumn (
 		last_glyph = column->glyph[y];
 	}
 
-	// change state from blanks <-> runs when the current run as expired
+	// change state from blanks <-> runs when the current run has expired
 	if (--column->run_length <= 0)
 	{
 		density = DENSITY_MAX - config.density + DENSITY_MIN;
@@ -427,6 +427,10 @@ PMATRIX CreateMatrix (
 
 	matrix = _r_mem_allocate (sizeof (MATRIX) + (sizeof (MATRIX_COLUMN) * numcols));
 
+	// there is no logic to check return value, because of this function thrown an exception when it failed, sooo...
+	//if (!matrix)
+	//	return NULL;
+
 	matrix->numcols = numcols;
 	matrix->numrows = numrows;
 	matrix->width = width;
@@ -438,6 +442,8 @@ PMATRIX CreateMatrix (
 		matrix->column[x].countdown = _r_math_getrandomrange (0, RND_MAX) % 100;
 		matrix->column[x].state = _r_math_getrandomrange (0, RND_MAX) % 2;
 		matrix->column[x].run_length = _r_math_getrandomrange (0, RND_MAX) % 20 + 3;
+
+		matrix->column[x].blip_length = matrix->column[x].length;
 
 		matrix->column[x].glyph = _r_mem_allocate (sizeof (GLYPH) * (numrows + 16));
 	}
