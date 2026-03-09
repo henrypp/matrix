@@ -2,26 +2,28 @@
 @setlocal enableextensions
 rem @cd /d "%~dp0\..\"
 
-if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" (
-	call "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64_arm64
+rem VS 2026
+
+if exist "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" (
+	call "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64_arm64
 	goto start
 )
 
-if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
-	call "%ProgramFiles%\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat" amd64_arm64
+if exist "%ProgramFiles%\Microsoft Visual Studio\18\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
+	call "%ProgramFiles%\Microsoft Visual Studio\18\Professional\VC\Auxiliary\Build\vcvarsall.bat" amd64_arm64
 	goto start
 )
 
-echo VS 2022 not found...
+echo VS 2026 was not found...
 
 goto end
 
 :start
 
-msbuild matrix.sln -property:Configuration=Release -property:Platform=x86 -verbosity:normal
+msbuild matrix.sln -property:Configuration=Release -property:Platform=x64 -verbosity:normal
 if %ERRORLEVEL% neq 0 goto end
 
-msbuild matrix.sln -property:Configuration=Release -property:Platform=x64 -verbosity:normal
+msbuild matrix.sln -property:Configuration=Release -property:Platform=ARM64 -verbosity:normal
 if %ERRORLEVEL% neq 0 goto end
 
 :end
