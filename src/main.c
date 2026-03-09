@@ -115,7 +115,7 @@ FORCEINLINE VOID DrawGlyph (
 
 FORCEINLINE VOID RedrawBlip (
 	_Inout_ PGLYPH glyph_arr,
-	_In_ INT blip_pos
+	_In_ ULONG_PTR blip_pos
 )
 {
 	glyph_arr[blip_pos + 0] |= GLYPH_REDRAW;
@@ -179,7 +179,8 @@ VOID ScrollMatrixColumn (
 				y++;
 		}
 
-		last_glyph = column->glyph[y];
+		if (y < column->length)
+			last_glyph = column->glyph[y];
 	}
 
 	// change state from blanks <-> runs when the current run has expired

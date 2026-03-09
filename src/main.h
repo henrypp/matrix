@@ -58,22 +58,20 @@ typedef struct _STATIC_DATA
 typedef ULONG GLYPH;
 typedef PULONG PGLYPH;
 
-//
 //	The "matrix" is basically an array of these
 //  column structures, positioned side-by-side
-//
 typedef struct _MATRIX_COLUMN
 {
 	PGLYPH glyph;
 
+	ULONG_PTR run_length;
+	ULONG_PTR length;
+
+	ULONG_PTR blip_length;
+	ULONG_PTR blip_pos;
+
 	LONG state;
 	LONG countdown;
-
-	ULONG blip_pos;
-	ULONG blip_length;
-
-	ULONG length;
-	ULONG run_length;
 
 	BOOLEAN is_started;
 } MATRIX_COLUMN, *PMATRIX_COLUMN;
