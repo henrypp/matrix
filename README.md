@@ -40,4 +40,4 @@ Binaries have GPG signature simplewall.exe.sig in application folder.
 - Website: [github.com/henrypp](https://github.com/henrypp)
 - Support: sforce5@mail.ru
 ---
-(c) 2011-2025 Henry++
+(c) 2011-2026 Henry++
