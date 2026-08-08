@@ -876,7 +876,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					BOOLEAN is_enabled;
 
-					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					is_enabled = _r_button_ischecked (hwnd, ctrl_id);
 
 					_r_ctrl_enable (hwnd, IDC_HUE_CTRL, !is_enabled);
 					_r_ctrl_enable (hwnd, IDC_HUE, !is_enabled);
@@ -889,13 +889,13 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_RANDOMIZESMOOTH_CHK:
 				{
-					config.is_smooth = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					config.is_smooth = _r_button_ischecked (hwnd, ctrl_id);
 					break;
 				}
 
 				case IDC_ISCLOSEONESC_CHK:
 				{
-					config.is_esc_only = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					config.is_esc_only = _r_button_ischecked (hwnd, ctrl_id);
 					break;
 				}
 			}
